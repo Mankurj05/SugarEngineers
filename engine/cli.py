@@ -97,7 +97,13 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     with open("report.json", "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
-    print("Pipeline complete! Wrote report.json")
+    ui_dir = PROJECT_ROOT / "ui"
+    ui_dir.mkdir(exist_ok=True)
+    ui_report_data_file = ui_dir / "report-data.js"
+    with open(ui_report_data_file, "w", encoding="utf-8") as f:
+        f.write(f"window.BLASTPROOF_REPORT = {json.dumps(report, indent=2)};")
+
+    print("Pipeline complete! Wrote report.json and ui/report-data.js")
     return report
 
 def main():

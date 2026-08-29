@@ -3,5 +3,6 @@ __pycache__/
 results.json
 comparison.json
 report.json
+ui/report-data.js
 .explain_cache.json
 .venv/
