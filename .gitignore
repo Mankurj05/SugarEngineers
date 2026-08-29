@@ -1,4 +1,7 @@
 __pycache__/
 *.pyc
 results.json
+comparison.json
+report.json
+.explain_cache.json
 .venv/

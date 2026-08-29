@@ -1,0 +1,30 @@
+[
+  {
+    "id": "D-17",
+    "file": "demo_app/core/interest.py",
+    "text": "EMI must use monthly normalization (annual_rate / 12) per lending convention",
+    "source": "PR #4",
+    "severity": "high"
+  },
+  {
+    "id": "D-22",
+    "file": "demo_app/main.py",
+    "text": "All /api/* responses use the {success, data, meta} envelope",
+    "source": "PR #2",
+    "severity": "medium"
+  },
+  {
+    "id": "D-31",
+    "file": "demo_app/services/payment_service.py",
+    "text": "Payment endpoints must remain read-only and never mutate stored state",
+    "source": "PR #3",
+    "severity": "high"
+  },
+  {
+    "id": "D-40",
+    "file": "demo_app/main.py",
+    "text": "The customer endpoint must not depend on interest calculations",
+    "source": "PR #1",
+    "severity": "medium"
+  }
+]
