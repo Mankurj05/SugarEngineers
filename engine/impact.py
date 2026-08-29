@@ -46,6 +46,8 @@ def compute_impact(old_ref: str, new_ref: str, use_local: bool = False, verbose:
             # We map a generic set based on MCP confirming the file is tied to models
             return {
                 "endpoints": ["/api/carts/quote", "/api/checkout", "/api/products"],
+                "affected_files": [changed_files[0]],
+                "changed": changed_files,
                 "files": changed_files,
                 "source": "mcp"
             }
