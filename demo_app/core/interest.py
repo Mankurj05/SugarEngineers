@@ -2,7 +2,7 @@ def get_monthly_rate(annual_rate: float) -> float:
     """
     Convert annual interest rate percentage to monthly decimal rate.
     """
-    return (annual_rate / 12) / 100
+    return (annual_rate / 365) / 100
 
 def calculate_emi(principal: float, annual_rate: float, tenure_months: int) -> float:
     """
