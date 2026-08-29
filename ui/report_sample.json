@@ -1,0 +1,50 @@
+{
+  "summary": {
+    "total": 50,
+    "identical": 30,
+    "intentional": 2,
+    "regression": 18,
+    "unexplained": 0
+  },
+  "radius": {
+    "changed": ["demo_app/core/interest.py"],
+    "affected_files": [
+      "demo_app/services/emi_service.py",
+      "demo_app/services/loan_service.py",
+      "demo_app/services/payment_service.py",
+      "demo_app/main.py"
+    ],
+    "affected_endpoints": ["/api/emi", "/api/loan/{loan_id}", "/api/payment"],
+    "call_paths": ["get_monthly_rate -> calculate_emi -> calculate_emi_endpoint"]
+  },
+  "results": [
+    {
+      "scenario": "emi_1",
+      "verdict": "regression",
+      "diffs": [
+        {"path": "data.emi", "old": 858.37, "new": 831.02},
+        {"path": "data.total_interest", "old": 300.44, "new": 27.12}
+      ],
+      "explanation": "EMI 858.37 -> 831.02 - caused by interest.py:5 (rate/12 -> rate/365), reached via get_monthly_rate -> calculate_emi.",
+      "rule": {
+        "id": "D-17",
+        "text": "EMI must use monthly normalization (annual_rate / 12) per lending convention",
+        "source": "PR #4"
+      }
+    },
+    {
+      "scenario": "loan_3",
+      "verdict": "intentional",
+      "diffs": [{"path": "data.schedule.0.interest", "old": 229.16, "new": 7.53}],
+      "explanation": "Loan schedule interest changed following the rate normalization change.",
+      "rule": null
+    },
+    {
+      "scenario": "customer_2",
+      "verdict": "identical",
+      "diffs": [],
+      "explanation": null,
+      "rule": null
+    }
+  ]
+}
