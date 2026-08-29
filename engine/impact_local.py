@@ -24,20 +24,20 @@ def get_git_changed_files(old_ref: str, new_ref: str) -> List[str]:
             changed.append(norm_path)
     return changed
 
-def build_import_graph() -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
+def build_import_graph() -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, str]]:
     """
     Parse all .py files in demo_app/ to find imports.
     Returns:
       importers: file_path -> set of file_paths that IMPORT this file (reverse import graph)
-      imports: file_path -> set of file_paths that this file IMPORTS
+      imports: file_path -> set of file_paths that this file IMPORTS (forward import graph)
+      symbol_to_file: symbol_name -> file_path where symbol is defined/imported from
     """
     imports: Dict[str, Set[str]] = {}
     importers: Dict[str, Set[str]] = {}
+    symbol_to_file: Dict[str, str] = {}
 
     py_files = list(DEMO_APP_DIR.rglob("*.py"))
     
-    # Map module names to file paths
-    # e.g., 'demo_app.core.interest' -> 'demo_app/core/interest.py'
     module_to_file: Dict[str, str] = {}
     for pf in py_files:
         rel = pf.relative_to(PROJECT_ROOT).as_posix()
@@ -62,30 +62,31 @@ def build_import_graph() -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
                         target = module_to_file[name]
                         imports[rel_pf].add(target)
                         importers.setdefault(target, set()).add(rel_pf)
+                        symbol = alias.asname or alias.name.split(".")[-1]
+                        symbol_to_file[f"{rel_pf}:{symbol}"] = target
             elif isinstance(node, ast.ImportFrom):
                 if node.module:
-                    # e.g., from demo_app.core.interest import get_monthly_rate
-                    # or from demo_app.services.emi_service import EMIService
                     mod_name = node.module
                     if mod_name in module_to_file:
                         target = module_to_file[mod_name]
                         imports[rel_pf].add(target)
                         importers.setdefault(target, set()).add(rel_pf)
+                        for alias in node.names:
+                            symbol = alias.asname or alias.name
+                            symbol_to_file[f"{rel_pf}:{symbol}"] = target
 
-    return importers, imports
+    return importers, imports, symbol_to_file
 
 def get_affected_files(changed_files: List[str], importers: Dict[str, Set[str]]) -> List[str]:
     """Walk dependents 2 levels deep starting from changed files."""
     affected = set(changed_files)
     
-    # Level 1
     level_1 = set()
     for cf in changed_files:
         level_1.update(importers.get(cf, set()))
     
     affected.update(level_1)
     
-    # Level 2
     level_2 = set()
     for f in level_1:
         level_2.update(importers.get(f, set()))
@@ -93,67 +94,100 @@ def get_affected_files(changed_files: List[str], importers: Dict[str, Set[str]])
     affected.update(level_2)
     return sorted(list(affected))
 
-def get_endpoints_and_paths(affected_files: List[str]) -> Tuple[List[str], List[str]]:
-    """Parse demo_app/main.py to map endpoints and generate call paths."""
+def get_transitive_dependencies(start_file: str, imports: Dict[str, Set[str]]) -> Set[str]:
+    """Get all files imported directly or indirectly by start_file."""
+    visited = set()
+    stack = [start_file]
+    while stack:
+        curr = stack.pop()
+        if curr not in visited:
+            visited.add(curr)
+            for imp in imports.get(curr, set()):
+                if imp not in visited:
+                    stack.append(imp)
+    return visited
+
+def get_endpoints_and_paths(affected_files: List[str], imports: Dict[str, Set[str]], symbol_to_file: Dict[str, str]) -> Tuple[List[str], List[str]]:
+    """Parse demo_app/main.py dynamically to map endpoints and call paths based on AST."""
     main_py = DEMO_APP_DIR / "main.py"
     if not main_py.exists():
         return [], []
+
+    rel_main = main_py.relative_to(PROJECT_ROOT).as_posix()
+    affected_set = set(affected_files)
 
     try:
         tree = ast.parse(main_py.read_text(encoding="utf-8"), filename=str(main_py))
     except Exception:
         return [], []
 
-    # Map endpoint to modules called/used
     affected_endpoints = []
     call_paths = []
 
-    # Map file name to simplified module / service name
-    # interest.py -> interest
-    # emi_service.py -> emi_service / EMIService
-    # loan_service.py -> loan_service / LoanService
-    # payment_service.py -> payment_service / PaymentService
-    
-    affected_set = set(affected_files)
+    # Parse imports in main.py to resolve instantiated variables / called services
+    main_symbols: Dict[str, str] = {} # name -> source_file
+    for key, target_file in symbol_to_file.items():
+        if key.startswith(f"{rel_main}:"):
+            sym = key.split(":", 1)[1]
+            main_symbols[sym] = target_file
 
-    # Simple inspection of main.py routes
-    # Routes in main.py:
-    # /health -> health_check
-    # /api/emi -> calculate_emi_endpoint (uses EMIService -> interest.py)
-    # /api/loan/{loan_id} -> get_loan (uses loan_service -> data_store.py)
-    # /api/payment -> calculate_payment_balance (uses payment_service -> loan_service & emi_service -> interest.py)
-    # /api/customer/{customer_id} -> get_customer (uses loan_service -> data_store.py)
-
+    # Track instances created in main.py, e.g., loan_service = LoanService()
     for node in tree.body:
-        if isinstance(node, ast.AsyncFunctionDef) or isinstance(node, ast.FunctionDef):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    var_name = target.id
+                    if isinstance(node.value, ast.Call):
+                        if isinstance(node.value.func, ast.Name):
+                            class_name = node.value.func.id
+                            if class_name in main_symbols:
+                                main_symbols[var_name] = main_symbols[class_name]
+
+    # Inspect route handlers
+    for node in tree.body:
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
+            handler_name = node.name
+            route_path = None
+
             for decorator in node.decorator_list:
                 if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
                     if decorator.func.attr in ("get", "post", "put", "delete", "patch"):
                         if decorator.args and isinstance(decorator.args[0], ast.Constant):
-                            route = decorator.args[0].value
-                            handler_name = node.name
+                            route_path = decorator.args[0].value
 
-                            # Determine reachability based on statically parsed structure
-                            reaches_changed = False
+            if not route_path:
+                continue
 
-                            if route == "/api/emi":
-                                if any("interest.py" in f or "emi_service.py" in f for f in affected_set):
-                                    reaches_changed = True
-                                    call_paths.append("get_monthly_rate -> calculate_emi -> calculate_emi_endpoint")
-                            elif route == "/api/payment":
-                                if any("interest.py" in f or "emi_service.py" in f or "payment_service.py" in f for f in affected_set):
-                                    reaches_changed = True
-                                    call_paths.append("get_monthly_rate -> calculate_emi -> calculate_balance -> calculate_payment_balance")
-                            elif route.startswith("/api/loan"):
-                                if any("loan_service.py" in f for f in affected_set):
-                                    reaches_changed = True
-                                    call_paths.append("get_loan -> get_loan")
-                            elif route.startswith("/api/customer"):
-                                if any("customer" in f for f in affected_set):
-                                    reaches_changed = True
+            # Walk function body to find called symbols
+            called_symbols = set()
+            for child in ast.walk(node):
+                if isinstance(child, ast.Name):
+                    if child.id in main_symbols:
+                        called_symbols.add(child.id)
+                elif isinstance(child, ast.Attribute):
+                    if isinstance(child.value, ast.Name) and child.value.id in main_symbols:
+                        called_symbols.add(child.value.id)
 
-                            if reaches_changed and route not in affected_endpoints:
-                                affected_endpoints.append(route)
+            # Check reachability for each called symbol
+            reaches_affected = False
+            symbol_paths = []
+
+            for sym in called_symbols:
+                target_file = main_symbols[sym]
+                deps = get_transitive_dependencies(target_file, imports)
+                
+                # Check if any affected file is in the dependency closure
+                hit_affected = deps.intersection(affected_set)
+                if hit_affected:
+                    reaches_affected = True
+                    symbol_paths.append(f"{sym} -> {handler_name}")
+
+            if reaches_affected:
+                if route_path not in affected_endpoints:
+                    affected_endpoints.append(route_path)
+                for sp in symbol_paths:
+                    if sp not in call_paths:
+                        call_paths.append(sp)
 
     return affected_endpoints, call_paths
 
@@ -167,9 +201,9 @@ def compute_impact(old_ref: str, new_ref: str) -> dict:
             "call_paths": []
         }
 
-    importers, _ = build_import_graph()
+    importers, imports, symbol_to_file = build_import_graph()
     affected_files = get_affected_files(changed, importers)
-    affected_endpoints, call_paths = get_endpoints_and_paths(affected_files)
+    affected_endpoints, call_paths = get_endpoints_and_paths(affected_files, imports, symbol_to_file)
 
     return {
         "changed": changed,
