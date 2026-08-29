@@ -1,23 +1,9 @@
 {
   "id": "customer_3",
-  "tag": "customer",
-  "request": {
-    "method": "GET",
-    "endpoint": "/api/customer/4",
-    "body": null
-  },
-  "expected_status": 200,
-  "response": {
-    "success": true,
-    "data": {
-      "id": 4,
-      "name": "Diana Prince",
-      "email": "diana@example.com",
-      "loans": []
-    },
-    "meta": {
-      "request_id": "e4d0ea92-fb7d-43d6-bd74-859242d64ae1",
-      "generated_at": "2026-08-29T05:20:40.566020+00:00"
-    }
-  }
+  "method": "GET",
+  "path": "/api/customer/4",
+  "body": {},
+  "tags": [
+    "customer"
+  ]
 }

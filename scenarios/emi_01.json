@@ -2,6 +2,6 @@
   "id": "emi_01",
   "method": "POST",
   "path": "/api/emi",
-  "body": {"principal": 100000, "annual_rate": 5.5, "months": 12},
+  "body": {"principal": 100000, "annual_rate": 5.5, "tenure_months": 12},
   "tags": ["emi"]
 }

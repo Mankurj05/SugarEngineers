@@ -1,27 +1,13 @@
 {
   "id": "emi_14",
-  "tag": "emi",
-  "request": {
-    "method": "POST",
-    "endpoint": "/api/emi",
-    "body": {
-      "principal": 25000,
-      "annual_rate": 7.25,
-      "tenure_months": 15
-    }
+  "method": "POST",
+  "path": "/api/emi",
+  "body": {
+    "principal": 25000,
+    "annual_rate": 7.25,
+    "tenure_months": 15
   },
-  "expected_status": 200,
-  "response": {
-    "success": true,
-    "data": {
-      "principal": 25000.0,
-      "annual_rate": 7.25,
-      "tenure_months": 15,
-      "emi": 1748.35
-    },
-    "meta": {
-      "request_id": "9ff73121-9a1c-456d-965e-5fe2bd0fd73f",
-      "generated_at": "2026-08-29T05:20:40.495039+00:00"
-    }
-  }
+  "tags": [
+    "emi"
+  ]
 }

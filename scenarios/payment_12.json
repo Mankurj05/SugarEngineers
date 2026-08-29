@@ -1,29 +1,12 @@
 {
   "id": "payment_12",
-  "tag": "payment",
-  "request": {
-    "method": "POST",
-    "endpoint": "/api/payment",
-    "body": {
-      "loan_id": "L-110",
-      "payments_made": 500
-    }
+  "method": "POST",
+  "path": "/api/payment",
+  "body": {
+    "loan_id": "L-110",
+    "payments_made": 500
   },
-  "expected_status": 200,
-  "response": {
-    "success": true,
-    "data": {
-      "loan_id": "L-110",
-      "principal": 150000,
-      "payments_made": 120,
-      "total_installments": 120,
-      "emi": 1726.2,
-      "total_paid": 207144.0,
-      "remaining_balance": 0.85
-    },
-    "meta": {
-      "request_id": "921fd38a-776e-4bf6-a5f6-7bc8bf1abf0c",
-      "generated_at": "2026-08-29T05:20:40.556476+00:00"
-    }
-  }
+  "tags": [
+    "payment"
+  ]
 }

@@ -1,31 +1,9 @@
 {
   "id": "customer_1",
-  "tag": "customer",
-  "request": {
-    "method": "GET",
-    "endpoint": "/api/customer/1",
-    "body": null
-  },
-  "expected_status": 200,
-  "response": {
-    "success": true,
-    "data": {
-      "id": 1,
-      "name": "Alice Smith",
-      "email": "alice@example.com",
-      "loans": [
-        {
-          "id": "L-101",
-          "principal": 50000,
-          "rate": 5.5,
-          "tenure_months": 60,
-          "start_date": "2023-01-01"
-        }
-      ]
-    },
-    "meta": {
-      "request_id": "50709d15-48f3-4b16-a991-ef75a4b7cee0",
-      "generated_at": "2026-08-29T05:20:40.562877+00:00"
-    }
-  }
+  "method": "GET",
+  "path": "/api/customer/1",
+  "body": {},
+  "tags": [
+    "customer"
+  ]
 }

@@ -1,45 +1,29 @@
 import json
-import httpx
 import os
-import time
 from pathlib import Path
 
-BASE_URL = "http://127.0.0.1:8000"
 SCENARIOS_DIR = Path("scenarios")
 
-def ensure_server_running():
-    try:
-        response = httpx.get(f"{BASE_URL}/health")
-        if response.status_code == 200:
-            print("Server is running!")
-            return True
-    except httpx.RequestError:
-        print("Server not running. Please start the demo-app server on port 8000.")
-        return False
-    return False
-
-def save_scenario(tag, number, method, endpoint, request_data, response_data, status_code):
+def save_scenario(tag, number, method, path, request_data):
     filename = f"{tag}_{number}.json"
     filepath = SCENARIOS_DIR / filename
     
+    scenario_id = f"{tag}_{number}"
+    
     scenario = {
-        "id": f"{tag}_{number}",
-        "tag": tag,
-        "request": {
-            "method": method,
-            "endpoint": endpoint,
-            "body": request_data
-        },
-        "expected_status": status_code,
-        "response": response_data
+        "id": scenario_id,
+        "method": method,
+        "path": path,
+        "body": request_data if request_data is not None else {},
+        "tags": [tag]
     }
     
     with open(filepath, "w") as f:
         json.dump(scenario, f, indent=2)
         
-    return scenario["id"]
+    return scenario_id
 
-def generate_emi_scenarios(client):
+def generate_emi_scenarios():
     tag = "emi"
     ids = []
     
@@ -91,13 +75,12 @@ def generate_emi_scenarios(client):
     all_cases = cases + error_cases
     
     for i, payload in enumerate(all_cases, 1):
-        response = client.post(f"{BASE_URL}/api/emi", json=payload)
-        scenario_id = save_scenario(tag, i, "POST", "/api/emi", payload, response.json(), response.status_code)
+        scenario_id = save_scenario(tag, i, "POST", "/api/emi", payload)
         ids.append(scenario_id)
         
     return ids
 
-def generate_loan_scenarios(client):
+def generate_loan_scenarios():
     tag = "loan"
     ids = []
     
@@ -110,14 +93,13 @@ def generate_loan_scenarios(client):
     all_cases = loan_ids_to_fetch + error_cases
     
     for i, loan_id in enumerate(all_cases, 1):
-        endpoint = f"/api/loan/{loan_id}"
-        response = client.get(f"{BASE_URL}{endpoint}")
-        scenario_id = save_scenario(tag, i, "GET", endpoint, None, response.json(), response.status_code)
+        path = f"/api/loan/{loan_id}"
+        scenario_id = save_scenario(tag, i, "GET", path, {})
         ids.append(scenario_id)
         
     return ids
 
-def generate_payment_scenarios(client):
+def generate_payment_scenarios():
     tag = "payment"
     ids = []
     
@@ -145,13 +127,12 @@ def generate_payment_scenarios(client):
     all_cases = cases + error_cases
     
     for i, payload in enumerate(all_cases, 1):
-        response = client.post(f"{BASE_URL}/api/payment", json=payload)
-        scenario_id = save_scenario(tag, i, "POST", "/api/payment", payload, response.json(), response.status_code)
+        scenario_id = save_scenario(tag, i, "POST", "/api/payment", payload)
         ids.append(scenario_id)
         
     return ids
 
-def generate_customer_scenarios(client):
+def generate_customer_scenarios():
     tag = "customer"
     ids = []
     
@@ -164,37 +145,36 @@ def generate_customer_scenarios(client):
     all_cases = customer_ids + error_cases
     
     for i, cust_id in enumerate(all_cases, 1):
-        endpoint = f"/api/customer/{cust_id}"
-        response = client.get(f"{BASE_URL}{endpoint}")
-        scenario_id = save_scenario(tag, i, "GET", endpoint, None, response.json(), response.status_code)
+        path = f"/api/customer/{cust_id}"
+        scenario_id = save_scenario(tag, i, "GET", path, {})
         ids.append(scenario_id)
         
     return ids
 
 def main():
-    if not ensure_server_running():
-        return
-
     SCENARIOS_DIR.mkdir(exist_ok=True)
+    
+    # Clean up old scenario files that start with emi_00*, etc. if we can,
+    # but the instructions specifically mentioned "delete the duplicate emi_001-emi_020 set"
+    # I'll do that in bash afterwards.
     
     manifest = {}
     
-    with httpx.Client() as client:
-        print("Generating EMI scenarios...")
-        manifest["emi"] = generate_emi_scenarios(client)
-        print(f"Generated {len(manifest['emi'])} EMI scenarios")
-        
-        print("Generating Loan scenarios...")
-        manifest["loan"] = generate_loan_scenarios(client)
-        print(f"Generated {len(manifest['loan'])} Loan scenarios")
-        
-        print("Generating Payment scenarios...")
-        manifest["payment"] = generate_payment_scenarios(client)
-        print(f"Generated {len(manifest['payment'])} Payment scenarios")
-        
-        print("Generating Customer scenarios...")
-        manifest["customer"] = generate_customer_scenarios(client)
-        print(f"Generated {len(manifest['customer'])} Customer scenarios")
+    print("Generating EMI scenarios...")
+    manifest["emi"] = generate_emi_scenarios()
+    print(f"Generated {len(manifest['emi'])} EMI scenarios")
+    
+    print("Generating Loan scenarios...")
+    manifest["loan"] = generate_loan_scenarios()
+    print(f"Generated {len(manifest['loan'])} Loan scenarios")
+    
+    print("Generating Payment scenarios...")
+    manifest["payment"] = generate_payment_scenarios()
+    print(f"Generated {len(manifest['payment'])} Payment scenarios")
+    
+    print("Generating Customer scenarios...")
+    manifest["customer"] = generate_customer_scenarios()
+    print(f"Generated {len(manifest['customer'])} Customer scenarios")
         
     manifest_path = SCENARIOS_DIR / "manifest.json"
     with open(manifest_path, "w") as f:
