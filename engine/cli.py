@@ -16,7 +16,7 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     print(f"[1/6] Computing impact between {old_ref} and {new_ref}...")
     impact = compute_impact(old_ref, new_ref, use_local=use_local)
     
-    affected_endpoints = impact.get("affected_endpoints", [])
+    affected_endpoints = impact.get("endpoints", [])
     print(f"      Affected endpoints: {affected_endpoints}")
 
     # Map endpoints to tags
@@ -25,7 +25,8 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
         clean_ep = ep.strip("/").split("/")[1] if len(ep.strip("/").split("/")) > 1 else ep.strip("/")
         tags.append(clean_ep)
 
-    tags_str = ",".join(set(tags)) if tags else "nosuchtag"
+    # If no endpoints detected (like when we don't have tags), default to "all" to run everything
+    tags_str = ",".join(set(tags)) if tags else "all"
 
     # Step 2: Replay
     print(f"[2/6] Replaying scenarios for tags: '{tags_str}'...")
