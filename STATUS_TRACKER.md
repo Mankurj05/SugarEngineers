@@ -1,11 +1,12 @@
 # STATUS TRACKER — BLASTPROOF
 
 ## CURRENT POSITION
-- **Current Phase:** Section 3, Phase 2: PROVE THE DETECTION WORKS
-- **Next Task:** Task 2.1 — Tag the "before" version (`v1.0` on main)
-- **Status:** Starting Phase 2
+- **Current Phase:** Section 8 — VERIFICATION CHECKLIST & PREPARATION FOR DEMO
+- **Next Task:** Verification Checklist / UI integration
+- **Status:** All Engine Phases (Phases 2, 3, 4, 5) completed and pushed to `origin/engine`.
 
-## TODO LIST
+### Section 7: UI Gate Dashboard
+- [x] **D4** Build UI PR safety gate dashboard (`index.html`)
 
 ### Phase 2: Prove Detection Works
 - [x] **2.1** Tag `v1.0` on main
