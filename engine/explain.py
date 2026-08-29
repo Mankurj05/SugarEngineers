@@ -2,10 +2,11 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 CACHE_FILE = Path(".explain_cache.json")
 
@@ -33,11 +34,49 @@ def get_code_diff(old_ref: str, new_ref: str) -> str:
     except Exception:
         return ""
 
-def format_fallback_explanation(scenario_id: str, diffs: List[dict]) -> str:
-    if not diffs:
-        return f"Scenario {scenario_id} unchanged."
-    diff_strs = [f"{d.get('path')}: {d.get('old')} -> {d.get('new')}" for d in diffs]
-    return f"Behavioral drift detected in {scenario_id}: {', '.join(diff_strs)} due to rate calculation change in demo_app/core/interest.py:5."
+def parse_git_diff(code_diff: str) -> List[dict]:
+    """Parse unified git diff into structured list of file changes."""
+    changes = []
+    current_file = None
+    current_line = None
+
+    lines = code_diff.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("+++ b/"):
+            current_file = line[6:].strip()
+            i += 1
+            continue
+        
+        # Hunk header: @@ -old_line,len +new_line,len @@
+        hunk_match = re.match(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+        if hunk_match:
+            current_line = int(hunk_match.group(1))
+            i += 1
+            old_lines = []
+            new_lines = []
+
+            while i < len(lines) and not lines[i].startswith("diff --git") and not lines[i].startswith("@@"):
+                dl = lines[i]
+                if dl.startswith("-") and not dl.startswith("---"):
+                    old_lines.append(dl[1:].strip())
+                elif dl.startswith("+") and not dl.startswith("+++"):
+                    new_lines.append(dl[1:].strip())
+                i += 1
+
+            if current_file and (old_lines or new_lines):
+                changes.append({
+                    "file": current_file,
+                    "line": current_line,
+                    "old_code": " ".join(old_lines),
+                    "new_code": " ".join(new_lines)
+                })
+            continue
+
+        i += 1
+
+    return changes
 
 def explain_scenario(scenario_id: str, diffs: List[dict], code_diff: str, call_paths: List[str], cache: dict) -> str:
     content_key = f"{scenario_id}:{json.dumps(diffs, sort_keys=True)}:{code_diff}"
@@ -46,17 +85,23 @@ def explain_scenario(scenario_id: str, diffs: List[dict], code_diff: str, call_p
     if cache_hash in cache:
         return cache[cache_hash]
 
-    # Attempt LLM call if available, or generate a deterministic clear explanation
-    # Construct standard explanation
+    parsed_changes = parse_git_diff(code_diff)
+    
     diff_summary = []
     for d in diffs:
         diff_summary.append(f"{d.get('path')} {d.get('old')} → {d.get('new')}")
-    
-    diff_text = ", ".join(diff_summary)
-    path_text = call_paths[0] if call_paths else "get_monthly_rate -> calculate_emi"
-    
-    explanation = f"EMI {diff_text} — caused by interest.py:5 (annual_rate / 12 → annual_rate / 365), reached via {path_text}."
-    
+    diff_text = ", ".join(diff_summary) if diff_summary else "behavioral drift"
+
+    path_text = call_paths[0] if call_paths else "direct call"
+
+    if parsed_changes:
+        primary = parsed_changes[0]
+        file_loc = f"{primary['file']}:{primary['line']}"
+        code_change = f"({primary['old_code']} → {primary['new_code']})" if primary['old_code'] or primary['new_code'] else ""
+        explanation = f"Scenario {scenario_id} ({diff_text}) — caused by change in {file_loc} {code_change}, reached via {path_text}."
+    else:
+        explanation = f"Scenario {scenario_id} ({diff_text}) — reached via {path_text}."
+
     cache[cache_hash] = explanation
     return explanation
 
@@ -68,7 +113,7 @@ def explain_comparison(comparison_file: str, old_ref: str, new_ref: str, call_pa
     code_diff = get_code_diff(old_ref, new_ref)
 
     if call_paths is None:
-        call_paths = ["get_monthly_rate -> calculate_emi -> calculate_emi_endpoint"]
+        call_paths = []
 
     explained_results = []
     for item in comparison_data:

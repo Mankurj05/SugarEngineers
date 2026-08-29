@@ -25,10 +25,14 @@ def is_noise(key: str, value: Any) -> bool:
             return True
     return False
 
+def is_noise_val(val: Any) -> bool:
+    if isinstance(val, str):
+        return bool(UUID_PATTERN.match(val) or ISO_TIMESTAMP_PATTERN.match(val))
+    return False
+
 def compare_values(old_val: Any, new_val: Any, path: str, diffs: List[Dict[str, Any]]) -> None:
     # Type mismatch is an automatic drift
     if type(old_val) != type(new_val):
-        # Exception: numeric types can sometimes be mixed in JSON decoding (int vs float)
         if isinstance(old_val, (int, float)) and isinstance(new_val, (int, float)):
             pass
         else:
@@ -45,9 +49,8 @@ def compare_values(old_val: Any, new_val: Any, path: str, diffs: List[Dict[str, 
             ov = old_val.get(k)
             nv = new_val.get(k)
             
-            # If either value matches a noise pattern, we skip it entirely
-            if (isinstance(ov, str) and (UUID_PATTERN.match(ov) or ISO_TIMESTAMP_PATTERN.match(ov))) or \
-               (isinstance(nv, str) and (UUID_PATTERN.match(nv) or ISO_TIMESTAMP_PATTERN.match(nv))):
+            # Require BOTH sides to match noise pattern before skipping
+            if is_noise_val(ov) and is_noise_val(nv):
                 continue
             
             p = f"{path}.{k}" if path else k
@@ -177,6 +180,22 @@ def run_selftest():
             }
         }
     }
+
+    uuid_to_error = {
+        "scenario": "uuid_to_error_test",
+        "old": {
+            "status": 200,
+            "json": {
+                "session_id": "12345678-1234-1234-1234-123456789012"
+            }
+        },
+        "new": {
+            "status": 200,
+            "json": {
+                "session_id": "ERROR"
+            }
+        }
+    }
     
     res1 = compare_scenario(noise_only)
     if res1["verdict"] != "identical" or len(res1["diffs"]) > 0:
@@ -194,6 +213,12 @@ def run_selftest():
     if res3["verdict"] != "identical" or len(res3["diffs"]) > 0:
         print("FAIL: Float tolerance scenario drifted (diff was 0.006)")
         print(json.dumps(res3, indent=2))
+        sys.exit(1)
+
+    res4 = compare_scenario(uuid_to_error)
+    if res4["verdict"] != "drift" or len(res4["diffs"]) != 1 or res4["diffs"][0]["new"] != "ERROR":
+        print("FAIL: UUID to ERROR scenario was silently swallowed as noise")
+        print(json.dumps(res4, indent=2))
         sys.exit(1)
         
     print("PASS: Self-test successful.")

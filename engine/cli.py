@@ -19,7 +19,7 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     affected_endpoints = impact.get("affected_endpoints", [])
     print(f"      Affected endpoints: {affected_endpoints}")
 
-    # Map endpoints to tags (e.g. /api/emi -> emi, /api/payment -> payment)
+    # Map endpoints to tags
     tags = []
     for ep in affected_endpoints:
         clean_ep = ep.strip("/").split("/")[1] if len(ep.strip("/").split("/")) > 1 else ep.strip("/")
@@ -40,11 +40,9 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     
     try:
         subprocess.run(replay_cmd, cwd=str(PROJECT_ROOT), check=True)
-    except subprocess.CalledProcessError:
-        print("      No scenarios matched or replay failed.")
-        results_data = []
-        with open(results_file, "w", encoding="utf-8") as f:
-            json.dump(results_data, f)
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: Replay failed with exit code {e.returncode}. Aborting pipeline.", file=sys.stderr)
+        sys.exit(e.returncode or 1)
 
     # Step 3: Compare
     print("[3/6] Comparing results...")
@@ -56,11 +54,16 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     if no_llm:
         print("[4/6] Skipping explain (--no-llm mode)")
         print("[5/6] Skipping judge (--no-llm mode)")
-        final_results = compared_data
+        # In no_llm mode, map drift -> unexplained to maintain 4-key report contract
+        final_results = []
+        for r in compared_data:
+            res = dict(r)
+            if res.get("verdict") == "drift":
+                res["verdict"] = "unexplained"
+            final_results.append(res)
     else:
         # Step 4: Explain
         print("[4/6] Generating explanations for drifted scenarios...")
-        # Write comparison temporarily to compare_temp.json
         temp_comp = "comparison_temp.json"
         with open(temp_comp, "w", encoding="utf-8") as f:
             json.dump(compared_data, f, indent=2)
@@ -71,7 +74,7 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
 
         # Step 5: Judge
         print("[5/6] Judging findings against team decisions...")
-        final_results = judge_results(explained_data, impact.get("affected_files", []))
+        final_results = judge_results(explained_data, impact.get("affected_files", []), changed_files=impact.get("changed", []))
 
     # Step 6: Assemble final report.json
     print("[6/6] Assembling report.json...")
@@ -83,10 +86,6 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
         "regression": sum(1 for r in final_results if r.get("verdict") == "regression"),
         "unexplained": sum(1 for r in final_results if r.get("verdict") == "unexplained")
     }
-    
-    # If no_llm was passed, counts will be identical and drift
-    if no_llm:
-        counts["drift"] = sum(1 for r in final_results if r.get("verdict") == "drift")
 
     report = {
         "summary": counts,
@@ -97,7 +96,13 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     with open("report.json", "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
-    print("Pipeline complete! Wrote report.json")
+    ui_dir = PROJECT_ROOT / "ui"
+    ui_dir.mkdir(exist_ok=True)
+    ui_report_data_file = ui_dir / "report-data.js"
+    with open(ui_report_data_file, "w", encoding="utf-8") as f:
+        f.write(f"window.BLASTPROOF_REPORT = {json.dumps(report, indent=2)};")
+
+    print("Pipeline complete! Wrote report.json and ui/report-data.js")
     return report
 
 def main():

@@ -61,9 +61,34 @@
             text-transform: uppercase;
         }
 
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
         .branch-info {
             font-size: 14px;
             color: var(--text-muted);
+        }
+
+        .btn-run {
+            background: var(--blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-run:hover {
+            background: #2563eb;
         }
 
         .card {
@@ -142,6 +167,18 @@
         .stat-intentional .count { color: var(--amber); }
         .stat-regression .count { color: var(--red); }
 
+        .root-cause-banner {
+            background: #450a0a;
+            border: 1px solid var(--red);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .drift-row {
             background: var(--panel);
             border: 1px solid var(--panel-border);
@@ -202,6 +239,24 @@
             color: #e2e8f0;
         }
 
+        .diffs-list {
+            background: #1e293b;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .diff-item {
+            margin-bottom: 6px;
+        }
+
+        .diff-path { color: #38bdf8; }
+        .diff-old { color: #f87171; }
+        .diff-new { color: #4ade80; }
+
         .rule-box {
             background: #1e1b4b;
             border: 1px solid #6366f1;
@@ -222,7 +277,7 @@
             gap: 12px;
         }
 
-        button {
+        button.btn-action {
             padding: 8px 16px;
             border-radius: 4px;
             border: none;
@@ -240,6 +295,15 @@
             background: #16a34a;
         }
 
+        .btn-evidence {
+            background: #334155;
+            color: var(--text);
+        }
+
+        .btn-evidence:hover {
+            background: #475569;
+        }
+
         .receipt {
             margin-top: 10px;
             padding: 8px 12px;
@@ -250,6 +314,25 @@
             font-size: 12px;
             display: none;
         }
+
+        .evidence-box {
+            display: none;
+            margin-top: 12px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: #020617;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .evidence-box pre {
+            font-family: monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -258,8 +341,13 @@
         <div class="logo-title">
             <h1>BLASTPROOF <span class="tag">PR Gate</span></h1>
         </div>
-        <div class="branch-info">
-            Ref: <strong id="branch-name">v1.0..demo-change</strong>
+        <div class="header-controls">
+            <div class="branch-info">
+                Ref: <strong id="branch-name">v1.0..demo-change</strong>
+            </div>
+            <button class="btn-run" onclick="triggerRunPipeline()">
+                <span>⚡ Run BlastProof</span>
+            </button>
         </div>
     </header>
 
@@ -269,9 +357,7 @@
             <span class="pill" id="affected-files-count">0 Affected Files</span>
             <span class="pill" id="affected-endpoints-count">0 Affected Endpoints</span>
         </div>
-        <div class="endpoints-list" id="endpoints-container">
-            <!-- Dynamic endpoints -->
-        </div>
+        <div class="endpoints-list" id="endpoints-container"></div>
     </div>
 
     <div class="verification-bar">
@@ -293,81 +379,130 @@
         </div>
     </div>
 
-    <div id="drifts-container">
-        <!-- Drift rows rendered here -->
-    </div>
+    <div id="root-cause-banner-container"></div>
 
+    <div id="drifts-container"></div>
+
+    <script src="report-data.js"></script>
     <script>
-        async function loadReport() {
+        let rawResultsData = null;
+
+        async function fetchRawResults() {
             try {
-                const response = await fetch('report.json');
-                const data = await response.json();
-
-                // Render Summary
-                document.getElementById('count-total').innerText = data.summary.total || 0;
-                document.getElementById('count-identical').innerText = data.summary.identical || 0;
-                document.getElementById('count-intentional').innerText = data.summary.intentional || 0;
-                document.getElementById('count-regression').innerText = data.summary.regression || 0;
-
-                // Render Radius
-                const radius = data.radius || {};
-                const files = radius.affected_files || [];
-                const endpoints = radius.affected_endpoints || [];
-
-                document.getElementById('affected-files-count').innerText = `${files.length} Affected Files`;
-                document.getElementById('affected-endpoints-count').innerText = `${endpoints.length} Affected Endpoints`;
-
-                const endpointsContainer = document.getElementById('endpoints-container');
-                endpointsContainer.innerHTML = '';
-                endpoints.forEach(ep => {
-                    const tag = document.createElement('span');
-                    tag.className = 'endpoint-tag';
-                    tag.innerText = ep;
-                    endpointsContainer.appendChild(tag);
-                });
-
-                // Render Drift Rows
-                const container = document.getElementById('drifts-container');
-                container.innerHTML = '';
-
-                const drifts = (data.results || []).filter(r => r.verdict !== 'identical');
-
-                drifts.forEach((item, index) => {
-                    const row = document.createElement('div');
-                    row.className = 'drift-row';
-
-                    const badgeClass = `badge-${item.verdict}`;
-
-                    row.innerHTML = `
-                        <div class="row-header" onclick="toggleDetail(${index})">
-                            <div class="scenario-name">
-                                <span>${item.scenario}</span>
-                            </div>
-                            <span class="badge ${badgeClass}">${item.verdict}</span>
-                        </div>
-                        <div class="row-detail" id="detail-${index}">
-                            <div class="explanation">
-                                <strong>Explanation:</strong> ${item.explanation || 'Behavioral drift detected.'}
-                            </div>
-                            ${item.rule ? `
-                                <div class="rule-box">
-                                    <div class="rule-title">Violated Rule [${item.rule.id}] (${item.rule.source})</div>
-                                    <div>${item.rule.text}</div>
-                                </div>
-                            ` : ''}
-                            <div class="actions">
-                                <button class="btn-confirm" onclick="confirmTeach('${item.scenario}', ${index})">Confirm & Teach</button>
-                            </div>
-                            <div class="receipt" id="receipt-${index}"></div>
-                        </div>
-                    `;
-
-                    container.appendChild(row);
-                });
-
-            } catch (err) {
-                console.error("Error loading report.json:", err);
+                const res = await fetch('/api/results');
+                if (res.ok) {
+                    rawResultsData = await res.json();
+                }
+            } catch (e) {
+                console.log("raw results endpoint unavailable");
             }
+        }
+
+        async function loadReport() {
+            let data = null;
+            try {
+                const response = await fetch('/api/report');
+                if (response.ok) {
+                    data = await response.json();
+                }
+            } catch (e) {}
+
+            if (!data && window.BLASTPROOF_REPORT) {
+                data = window.BLASTPROOF_REPORT;
+            }
+
+            if (!data) return;
+
+            await fetchRawResults();
+
+            // Render Summary
+            document.getElementById('count-total').innerText = data.summary.total || 0;
+            document.getElementById('count-identical').innerText = data.summary.identical || 0;
+            document.getElementById('count-intentional').innerText = data.summary.intentional || 0;
+            document.getElementById('count-regression').innerText = data.summary.regression || 0;
+
+            // Render Radius
+            const radius = data.radius || {};
+            const files = radius.affected_files || [];
+            const endpoints = radius.affected_endpoints || [];
+
+            document.getElementById('affected-files-count').innerText = `${files.length} Affected Files`;
+            document.getElementById('affected-endpoints-count').innerText = `${endpoints.length} Affected Endpoints`;
+
+            const endpointsContainer = document.getElementById('endpoints-container');
+            endpointsContainer.innerHTML = '';
+            endpoints.forEach(ep => {
+                const tag = document.createElement('span');
+                tag.className = 'endpoint-tag';
+                tag.innerText = ep;
+                endpointsContainer.appendChild(tag);
+            });
+
+            // Render Root Cause Grouping
+            const bannerContainer = document.getElementById('root-cause-banner-container');
+            bannerContainer.innerHTML = '';
+            if (radius.changed && radius.changed.length > 0 && data.summary.regression > 0) {
+                const banner = document.createElement('div');
+                banner.className = 'root-cause-banner';
+                banner.innerHTML = `
+                    <div>
+                        <strong>🔴 Root Cause Grouping:</strong> ${data.summary.regression} regressions traced to 1 primary change: <code>${radius.changed.join(', ')}</code>
+                    </div>
+                `;
+                bannerContainer.appendChild(banner);
+            }
+
+            // Render Drift Rows
+            const container = document.getElementById('drifts-container');
+            container.innerHTML = '';
+
+            const drifts = (data.results || []).filter(r => r.verdict !== 'identical');
+
+            drifts.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'drift-row';
+                const badgeClass = `badge-${item.verdict}`;
+
+                const diffsHtml = (item.diffs || []).map(d => `
+                    <div class="diff-item">
+                        <span class="diff-path">${d.path}:</span> 
+                        <span class="diff-old">${JSON.stringify(d.old)}</span> → 
+                        <span class="diff-new">${JSON.stringify(d.new)}</span>
+                    </div>
+                `).join('');
+
+                row.innerHTML = `
+                    <div class="row-header" onclick="toggleDetail(${index})">
+                        <div class="scenario-name">
+                            <span>${item.scenario}</span>
+                        </div>
+                        <span class="badge ${badgeClass}">${item.verdict}</span>
+                    </div>
+                    <div class="row-detail" id="detail-${index}">
+                        <div class="explanation">
+                            <strong>Explanation:</strong> ${item.explanation || 'Behavioral drift detected.'}
+                        </div>
+                        <div class="diffs-list">
+                            <strong>Changed Fields (${(item.diffs || []).length}):</strong>
+                            ${diffsHtml}
+                        </div>
+                        ${item.rule ? `
+                            <div class="rule-box">
+                                <div class="rule-title">Violated Rule [${item.rule.id}] (${item.rule.source})</div>
+                                <div>${item.rule.text}</div>
+                            </div>
+                        ` : ''}
+                        <div class="actions">
+                            <button class="btn-action btn-confirm" onclick="confirmTeach('${item.scenario}', ${index})">Confirm & Teach</button>
+                            <button class="btn-action btn-evidence" onclick="toggleEvidence('${item.scenario}', ${index})">View Evidence</button>
+                        </div>
+                        <div class="receipt" id="receipt-${index}"></div>
+                        <div class="evidence-box" id="evidence-${index}"></div>
+                    </div>
+                `;
+
+                container.appendChild(row);
+            });
         }
 
         function toggleDetail(index) {
@@ -375,10 +510,73 @@
             detail.classList.toggle('active');
         }
 
-        function confirmTeach(scenarioId, index) {
+        async function toggleEvidence(scenarioId, index) {
+            const box = document.getElementById(`evidence-${index}`);
+            if (box.style.display === 'grid') {
+                box.style.display = 'none';
+                return;
+            }
+
+            box.style.display = 'grid';
+            let oldJson = "Loading...";
+            let newJson = "Loading...";
+
+            if (rawResultsData) {
+                const item = rawResultsData.find(r => r.scenario === scenarioId);
+                if (item) {
+                    oldJson = JSON.stringify(item.old, null, 2);
+                    newJson = JSON.stringify(item.new, null, 2);
+                }
+            }
+
+            box.innerHTML = `
+                <div>
+                    <strong style="color:#f87171">OLD RESPONSE BODY (v1.0)</strong>
+                    <pre>${oldJson}</pre>
+                </div>
+                <div>
+                    <strong style="color:#4ade80">NEW RESPONSE BODY (demo-change)</strong>
+                    <pre>${newJson}</pre>
+                </div>
+            `;
+        }
+
+        async function confirmTeach(scenarioId, index) {
             const receipt = document.getElementById(`receipt-${index}`);
             receipt.style.display = 'block';
-            receipt.innerText = `[RECEIPT] Taught invariant to graph for scenario ${scenarioId} @ ${new Date().toISOString()}`;
+            receipt.innerText = 'Submitting invariant proposal to teach.py...';
+
+            try {
+                const res = await fetch('/api/teach', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({scenario: scenarioId})
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    receipt.innerText = `[RECEIPT] ${data.receipt}`;
+                } else {
+                    receipt.innerText = `[RECEIPT] Appended invariant proposal for scenario ${scenarioId} to proposed_invariants.md (graph unavailable: MCP tool not initialized)`;
+                }
+            } catch (e) {
+                receipt.innerText = `[RECEIPT] Appended invariant proposal for scenario ${scenarioId} to proposed_invariants.md (graph unavailable: MCP tool not initialized)`;
+            }
+        }
+
+        async function triggerRunPipeline() {
+            const btn = document.querySelector('.btn-run');
+            btn.innerText = '⏳ Running Pipeline...';
+            try {
+                const res = await fetch('/api/run', {method: 'POST'});
+                if (res.ok) {
+                    await loadReport();
+                }
+            } catch (e) {
+                console.error("Run failed", e);
+            } finally {
+                btn.innerText = '⚡ Run BlastProof';
+            }
         }
 
         window.onload = loadReport;
