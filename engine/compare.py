@@ -25,10 +25,14 @@ def is_noise(key: str, value: Any) -> bool:
             return True
     return False
 
+def is_noise_val(val: Any) -> bool:
+    if isinstance(val, str):
+        return bool(UUID_PATTERN.match(val) or ISO_TIMESTAMP_PATTERN.match(val))
+    return False
+
 def compare_values(old_val: Any, new_val: Any, path: str, diffs: List[Dict[str, Any]]) -> None:
     # Type mismatch is an automatic drift
     if type(old_val) != type(new_val):
-        # Exception: numeric types can sometimes be mixed in JSON decoding (int vs float)
         if isinstance(old_val, (int, float)) and isinstance(new_val, (int, float)):
             pass
         else:
@@ -39,19 +43,14 @@ def compare_values(old_val: Any, new_val: Any, path: str, diffs: List[Dict[str, 
     if isinstance(old_val, dict):
         all_keys = set(old_val.keys()) | set(new_val.keys())
         for k in sorted(all_keys):
-            # Check noise using key name or EITHER value being noise-shaped
-            # If a field is noise in old but not in new, we still ignore it if it matches the pattern
-            # Though strictly, if it's noise in one but not the other, it might be a drift.
-            # We'll check both.
             if k in IGNORE_KEYS:
                 continue
             
             ov = old_val.get(k)
             nv = new_val.get(k)
             
-            # If either value matches a noise pattern, we skip it entirely
-            if (isinstance(ov, str) and (UUID_PATTERN.match(ov) or ISO_TIMESTAMP_PATTERN.match(ov))) or \
-               (isinstance(nv, str) and (UUID_PATTERN.match(nv) or ISO_TIMESTAMP_PATTERN.match(nv))):
+            # Require BOTH sides to match noise pattern before skipping
+            if is_noise_val(ov) and is_noise_val(nv):
                 continue
             
             p = f"{path}.{k}" if path else k
@@ -66,7 +65,6 @@ def compare_values(old_val: Any, new_val: Any, path: str, diffs: List[Dict[str, 
     elif isinstance(old_val, list):
         if len(old_val) != len(new_val):
             diffs.append({"path": path, "old": f"List of length {len(old_val)}", "new": f"List of length {len(new_val)}"})
-            # We don't recurse if lengths differ to avoid index out of bounds
             return
             
         for i, (ov, nv) in enumerate(zip(old_val, new_val)):
@@ -104,14 +102,11 @@ def compare_scenario(scenario_data: Dict[str, Any]) -> Dict[str, Any]:
     
     diffs = []
     
-    # 2. Deep-walk both json objects
-    # We treat the root as a dict. If it's not a dict, we handle it directly
     if isinstance(old_json, dict) and isinstance(new_json, dict):
         compare_values(old_json, new_json, "", diffs)
     elif isinstance(old_json, list) and isinstance(new_json, list):
         compare_values(old_json, new_json, "", diffs)
     else:
-        # Fallback for primitive roots
         compare_values(old_json, new_json, "root", diffs)
         
     return {
@@ -120,10 +115,16 @@ def compare_scenario(scenario_data: Dict[str, Any]) -> Dict[str, Any]:
         "diffs": diffs
     }
 
+def compare_results(results_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    output = []
+    for scenario_data in results_data:
+        result = compare_scenario(scenario_data)
+        output.append(result)
+    return output
+
 def run_selftest():
     print("Running compare.py self-test...")
     
-    # 1. Noise only
     noise_only = {
         "scenario": "noise_test",
         "old": {
@@ -146,7 +147,6 @@ def run_selftest():
         }
     }
     
-    # 2. Real drift
     real_drift = {
         "scenario": "drift_test",
         "old": {
@@ -165,7 +165,6 @@ def run_selftest():
         }
     }
     
-    # 3. Float tolerance
     float_tolerance = {
         "scenario": "float_test",
         "old": {
@@ -181,26 +180,45 @@ def run_selftest():
             }
         }
     }
+
+    uuid_to_error = {
+        "scenario": "uuid_to_error_test",
+        "old": {
+            "status": 200,
+            "json": {
+                "session_id": "12345678-1234-1234-1234-123456789012"
+            }
+        },
+        "new": {
+            "status": 200,
+            "json": {
+                "session_id": "ERROR"
+            }
+        }
+    }
     
-    # Test 1
     res1 = compare_scenario(noise_only)
     if res1["verdict"] != "identical" or len(res1["diffs"]) > 0:
         print("FAIL: Noise-only scenario drifted")
         print(json.dumps(res1, indent=2))
         sys.exit(1)
         
-    # Test 2
     res2 = compare_scenario(real_drift)
     if res2["verdict"] != "drift" or len(res2["diffs"]) != 1 or res2["diffs"][0]["path"] != "emi":
         print("FAIL: Real drift scenario did not catch only the numeric drift")
         print(json.dumps(res2, indent=2))
         sys.exit(1)
         
-    # Test 3
     res3 = compare_scenario(float_tolerance)
     if res3["verdict"] != "identical" or len(res3["diffs"]) > 0:
         print("FAIL: Float tolerance scenario drifted (diff was 0.006)")
         print(json.dumps(res3, indent=2))
+        sys.exit(1)
+
+    res4 = compare_scenario(uuid_to_error)
+    if res4["verdict"] != "drift" or len(res4["diffs"]) != 1 or res4["diffs"][0]["new"] != "ERROR":
+        print("FAIL: UUID to ERROR scenario was silently swallowed as noise")
+        print(json.dumps(res4, indent=2))
         sys.exit(1)
         
     print("PASS: Self-test successful.")
@@ -219,7 +237,7 @@ def main():
         parser.error("--results is required unless running --selftest")
         
     try:
-        with open(args.results, "r") as f:
+        with open(args.results, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         print(f"Error reading {args.results}: {e}")
@@ -229,11 +247,7 @@ def main():
         print("Error: results.json must contain a top-level JSON array.")
         sys.exit(1)
         
-    output = []
-    for scenario_data in data:
-        result = compare_scenario(scenario_data)
-        output.append(result)
-        
+    output = compare_results(data)
     print(json.dumps(output, indent=2))
 
 if __name__ == "__main__":

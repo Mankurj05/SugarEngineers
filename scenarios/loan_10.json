@@ -1,9 +1,0 @@
-{
-  "id": "loan_10",
-  "method": "GET",
-  "path": "/api/loan/L-110",
-  "body": {},
-  "tags": [
-    "loan"
-  ]
-}

@@ -1,4 +1,8 @@
 __pycache__/
 *.pyc
 results.json
+comparison.json
+report.json
+ui/report-data.js
+.explain_cache.json
 .venv/

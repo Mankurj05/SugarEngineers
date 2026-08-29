@@ -1,9 +1,0 @@
-{
-  "id": "customer_10",
-  "method": "GET",
-  "path": "/api/customer/0",
-  "body": {},
-  "tags": [
-    "customer"
-  ]
-}
