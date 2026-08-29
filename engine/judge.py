@@ -29,7 +29,8 @@ def classify_drift(item: dict, affected_files: List[str], decisions: List[dict],
     Returns: (verdict, matched_rule)
     """
     explanation = item.get("explanation", "").lower()
-    files_to_check = changed_files if changed_files else affected_files
+    changed_list = changed_files if changed_files is not None else []
+    files_to_check = changed_list if changed_list else affected_files
     
     for file in files_to_check:
         matching_rules = [d for d in decisions if d.get("file") == file or file.endswith(d.get("file", ""))]
@@ -43,7 +44,7 @@ def classify_drift(item: dict, affected_files: List[str], decisions: List[dict],
                     match = True
                     break
             
-            if match or file in changed_files:
+            if match or (changed_list and file in changed_list):
                 rule_meta = {
                     "id": rule["id"],
                     "text": rule["text"],
