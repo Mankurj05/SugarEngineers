@@ -360,6 +360,28 @@
             // Filter out identicals for the rows list (we show a summary instead)
             const driftedResults = sortedResults.filter(r => r.verdict !== 'identical');
 
+            // Group drift results by explanation if possible to avoid 25 identical looking rows
+            const groupedDrifts = [];
+            let currentGroup = null;
+            
+            // For simplicity in this demo, if the explanation and rule match exactly, we group them.
+            // Since we sorted by verdict, grouped items should naturally be adjacent if they are identical.
+            // But to be robust, we'll build a map.
+            const groupsMap = new Map();
+            
+            driftedResults.forEach(res => {
+                const key = res.explanation + "|" + (res.rule ? res.rule.id : "null");
+                if (!groupsMap.has(key)) {
+                    groupsMap.set(key, {
+                        count: 0,
+                        representative: res,
+                        scenarios: []
+                    });
+                }
+                groupsMap.get(key).count++;
+                groupsMap.get(key).scenarios.push(res.scenario);
+            });
+
             let html = `
                 <header>
                     <h1>BLASTPROOF</h1>
@@ -387,16 +409,33 @@
                     ${data.summary.identical > 0 ? `<div class="identical-summary">✓ ${data.summary.identical} scenarios executed with identical behavior.</div>` : ''}
             `;
 
-            driftedResults.forEach((res, index) => {
+            let index = 0;
+            for (const [key, group] of groupsMap) {
+                const res = group.representative;
+                const count = group.count;
+                const scenarioText = count > 1 ? `${count} scenarios` : res.scenario;
+                
+                // Attempt to extract a root cause string (e.g. "interest.py:5") from explanation if possible, otherwise use the diff or explanation snippet
+                let rootCauseText = "";
+                if (res.explanation && res.explanation.includes("caused by")) {
+                    const match = res.explanation.match(/caused by (.*?)(?:,|$)/);
+                    if (match && match[1]) {
+                        rootCauseText = ` · 1 root cause · ${match[1]}`;
+                    }
+                }
+
                 const firstDiff = res.diffs && res.diffs.length > 0 ? res.diffs[0] : null;
-                const diffText = firstDiff ? `<span>${firstDiff.path}:</span> <span class="old-val">${firstDiff.old}</span> → <span class="new-val">${firstDiff.new}</span>` : 'Metadata change only';
+                const diffText = count > 1 && rootCauseText ? 
+                    `<span>Grouped:</span> ${rootCauseText}` : 
+                    (firstDiff ? `<span>${firstDiff.path}:</span> <span class="old-val">${firstDiff.old}</span> → <span class="new-val">${firstDiff.new}</span>` : 'Metadata change only');
+                
                 const vColor = getVerdictColor(res.verdict);
                 const vIcon = getVerdictIcon(res.verdict);
 
                 html += `
                     <div class="drift-row" id="row-${index}">
                         <div class="row-header" onclick="toggleRow(${index})">
-                            <div class="col-scenario">${res.scenario}</div>
+                            <div class="col-scenario" title="${group.scenarios.join(', ')}">${scenarioText}</div>
                             <div class="col-diff">${diffText}</div>
                             <div class="col-verdict ${vColor}">${vIcon} ${res.verdict}</div>
                         </div>
@@ -410,8 +449,14 @@
                             </div>
                             ` : ''}
                             
+                            ${count > 1 ? `
+                            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">
+                                <strong>Affected Scenarios:</strong> ${group.scenarios.join(', ')}
+                            </div>
+                            ` : ''}
+                            
                             <div class="actions">
-                                <button onclick="toggleEvidence(${index})">View Evidence</button>
+                                <button onclick="toggleEvidence(${index})">View Evidence${count > 1 ? ' (Representative)' : ''}</button>
                                 <button class="primary" onclick="confirmTeach(${index})">Confirm & Teach</button>
                                 <span class="receipt" id="receipt-${index}">Written to graph — pending_edit_id: bp_938xf</span>
                             </div>
@@ -428,7 +473,8 @@
                         </div>
                     </div>
                 `;
-            });
+                index++;
+            }
 
             html += `</div>`;
             app.innerHTML = html;

@@ -3,7 +3,7 @@
     "id": "D-17",
     "file": "demo_app/core/interest.py",
     "text": "EMI must use monthly normalization (annual_rate / 12) per lending convention",
-    "source": "PR #4",
+    "source": "PR #1",
     "severity": "high"
   },
   {
@@ -24,7 +24,7 @@
     "id": "D-40",
     "file": "demo_app/main.py",
     "text": "The customer endpoint must not depend on interest calculations",
-    "source": "PR #1",
+    "source": "PR #4",
     "severity": "medium"
   }
 ]
