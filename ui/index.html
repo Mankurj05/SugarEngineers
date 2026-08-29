@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLASTPROOF - PR Safety Gate</title>
+    <style>
+        :root {
+            --bg-dark: #0d1117;
+            --bg-panel: #161b22;
+            --bg-card: #21262d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --border: #30363d;
+            --green: #238636;
+            --red: #da3633;
+            --amber: #d29922;
+            --yellow: #e3b341;
+            --blue: #58a6ff;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 1. Header */
+        header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: 1px;
+        }
+
+        .branch-info {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .branch-info code {
+            font-family: var(--font-mono);
+            background: var(--bg-panel);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-main);
+        }
+
+        /* 2. Radius card */
+        .radius-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .radius-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .chip {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--blue);
+        }
+
+        .call-path {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+        }
+
+        /* 3. Verification bar */
+        .verification-bar {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(35, 134, 54, 0.1);
+            border-radius: 6px;
+            border-left: 4px solid var(--green);
+        }
+        
+        .verification-bar.has-regressions {
+            background: rgba(218, 54, 51, 0.1);
+            border-left: 4px solid var(--red);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .color-green { color: var(--green); }
+        .color-red { color: var(--red); }
+        .color-amber { color: var(--amber); }
+        .color-yellow { color: var(--yellow); }
+
+        /* 4. Drift list */
+        .drift-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .drift-row {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .identical-summary {
+            background-color: var(--bg-dark);
+            border: 1px dashed var(--border);
+            color: var(--text-muted);
+            padding: 12px 16px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .row-header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .row-header:hover {
+            background-color: var(--bg-card);
+        }
+
+        .col-scenario {
+            flex: 0 0 150px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .col-diff {
+            flex: 1;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .old-val { color: var(--red); text-decoration: line-through; }
+        .new-val { color: var(--green); }
+
+        .col-verdict {
+            flex: 0 0 120px;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* 5. Row detail */
+        .row-detail {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background-color: var(--bg-card);
+        }
+
+        .drift-row.expanded .row-detail {
+            display: block;
+        }
+
+        .explanation {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .rule-box {
+            background-color: var(--bg-dark);
+            border-left: 3px solid var(--blue);
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .rule-text {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .rule-source {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button {
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--border);
+        }
+
+        button.primary {
+            background-color: var(--green);
+            color: #fff;
+            border-color: var(--green);
+        }
+
+        button.primary:hover {
+            background-color: #2ea043;
+        }
+
+        .receipt {
+            display: none;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .evidence {
+            display: none;
+            margin-top: 16px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .evidence.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- Rendered by JS -->
+    </div>
+
+    <script>
+        // Load report.json (using fetch if possible, or fallback to hardcoded for local double-click)
+        async function loadReport() {
+            try {
+                const response = await fetch('report_sample.json');
+                const data = await response.json();
+                render(data);
+            } catch (e) {
+                console.error("Could not load JSON, falling back to embedded sample data", e);
+                // Embedded fallback for local double-click without a server
+                const fallbackData = {
+                  "summary": { "total": 50, "identical": 30, "intentional": 2, "regression": 18, "unexplained": 0 },
+                  "radius": {
+                    "changed": ["demo_app/core/interest.py"],
+                    "affected_files": ["demo_app/services/emi_service.py", "demo_app/services/loan_service.py", "demo_app/services/payment_service.py", "demo_app/main.py"],
+                    "affected_endpoints": ["/api/emi", "/api/loan/{loan_id}", "/api/payment"],
+                    "call_paths": ["get_monthly_rate -> calculate_emi -> calculate_emi_endpoint"]
+                  },
+                  "results": [
+                    {
+                      "scenario": "emi_1", "verdict": "regression",
+                      "diffs": [{"path": "data.emi", "old": 858.37, "new": 831.02}, {"path": "data.total_interest", "old": 300.44, "new": 27.12}],
+                      "explanation": "EMI 858.37 -> 831.02 - caused by interest.py:5 (rate/12 -> rate/365), reached via get_monthly_rate -> calculate_emi.",
+                      "rule": { "id": "D-17", "text": "EMI must use monthly normalization (annual_rate / 12) per lending convention", "source": "PR #4" }
+                    },
+                    {
+                      "scenario": "loan_3", "verdict": "intentional",
+                      "diffs": [{"path": "data.schedule.0.interest", "old": 229.16, "new": 7.53}],
+                      "explanation": "Loan schedule interest changed following the rate normalization change.",
+                      "rule": null
+                    },
+                    {
+                      "scenario": "customer_2", "verdict": "identical", "diffs": [], "explanation": null, "rule": null
+                    }
+                  ]
+                };
+                render(fallbackData);
+            }
+        }
+
+        function getVerdictColor(verdict) {
+            switch(verdict) {
+                case 'regression': return 'color-red';
+                case 'intentional': return 'color-amber';
+                case 'unexplained': return 'color-yellow';
+                default: return 'color-green';
+            }
+        }
+        
+        function getVerdictIcon(verdict) {
+            switch(verdict) {
+                case 'regression': return '🔴';
+                case 'intentional': return '⚠';
+                case 'unexplained': return '🟡';
+                default: return '✓';
+            }
+        }
+
+        function render(data) {
+            const app = document.getElementById('app');
+            const hasRegressions = data.summary.regression > 0;
+            
+            // Sort results: regressions first, then unexplained, intentional, identical
+            const sortOrder = { 'regression': 1, 'unexplained': 2, 'intentional': 3, 'identical': 4 };
+            const sortedResults = [...data.results].sort((a, b) => sortOrder[a.verdict] - sortOrder[b.verdict]);
+            
+            // Filter out identicals for the rows list (we show a summary instead)
+            const driftedResults = sortedResults.filter(r => r.verdict !== 'identical');
+
+            let html = `
+                <header>
+                    <h1>BLASTPROOF</h1>
+                    <div class="branch-info">Checking current branch changes — modified <code>${data.radius.changed.join(', ')}</code></div>
+                </header>
+
+                <div class="radius-card">
+                    <h3>Blast radius: ${data.radius.affected_files.length} affected files · ${data.radius.affected_endpoints.length} affected endpoints</h3>
+                    <div class="chips">
+                        ${data.radius.affected_endpoints.map(ep => `<div class="chip">${ep}</div>`).join('')}
+                    </div>
+                    ${data.radius.call_paths && data.radius.call_paths.length > 0 ? 
+                      `<div class="call-path">↳ ${data.radius.call_paths[0]}</div>` : ''}
+                </div>
+
+                <div class="verification-bar ${hasRegressions ? 'has-regressions' : ''}">
+                    ${data.summary.total} scenarios · 
+                    <span class="badge color-green">✓ ${data.summary.identical} unchanged</span> · 
+                    <span class="badge color-amber">⚠ ${data.summary.intentional} intentional</span> · 
+                    <span class="badge color-red">🔴 ${data.summary.regression} regression</span> · 
+                    <span class="badge color-yellow">🟡 ${data.summary.unexplained} unexplained</span>
+                </div>
+
+                <div class="drift-list">
+                    ${data.summary.identical > 0 ? `<div class="identical-summary">✓ ${data.summary.identical} scenarios executed with identical behavior.</div>` : ''}
+            `;
+
+            driftedResults.forEach((res, index) => {
+                const firstDiff = res.diffs && res.diffs.length > 0 ? res.diffs[0] : null;
+                const diffText = firstDiff ? `<span>${firstDiff.path}:</span> <span class="old-val">${firstDiff.old}</span> → <span class="new-val">${firstDiff.new}</span>` : 'Metadata change only';
+                const vColor = getVerdictColor(res.verdict);
+                const vIcon = getVerdictIcon(res.verdict);
+
+                html += `
+                    <div class="drift-row" id="row-${index}">
+                        <div class="row-header" onclick="toggleRow(${index})">
+                            <div class="col-scenario">${res.scenario}</div>
+                            <div class="col-diff">${diffText}</div>
+                            <div class="col-verdict ${vColor}">${vIcon} ${res.verdict}</div>
+                        </div>
+                        <div class="row-detail">
+                            ${res.explanation ? `<div class="explanation">${res.explanation}</div>` : ''}
+                            
+                            ${res.rule ? `
+                            <div class="rule-box">
+                                <div class="rule-text">"${res.rule.text}"</div>
+                                <div class="rule-source">Source: ${res.rule.source}</div>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="actions">
+                                <button onclick="toggleEvidence(${index})">View Evidence</button>
+                                <button class="primary" onclick="confirmTeach(${index})">Confirm & Teach</button>
+                                <span class="receipt" id="receipt-${index}">Written to graph — pending_edit_id: bp_938xf</span>
+                            </div>
+                            
+                            <div class="evidence" id="evidence-${index}">
+                                <strong>${firstDiff ? firstDiff.path : 'Diff'}</strong>
+                                <br><br>
+                                Old:<br>
+                                <pre>${JSON.stringify(firstDiff ? firstDiff.old : null, null, 2)}</pre>
+                                <br>
+                                New:<br>
+                                <pre>${JSON.stringify(firstDiff ? firstDiff.new : null, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            app.innerHTML = html;
+        }
+
+        // Global functions for inline handlers
+        window.toggleRow = function(index) {
+            document.getElementById(`row-${index}`).classList.toggle('expanded');
+        };
+
+        window.toggleEvidence = function(index) {
+            document.getElementById(`evidence-${index}`).classList.toggle('visible');
+        };
+
+        window.confirmTeach = function(index) {
+            const btn = document.querySelector(`#row-${index} button.primary`);
+            btn.textContent = "Confirmed";
+            btn.style.backgroundColor = "var(--bg-panel)";
+            btn.style.color = "var(--text-muted)";
+            btn.style.borderColor = "var(--border)";
+            btn.disabled = true;
+            document.getElementById(`receipt-${index}`).style.display = "inline";
+        };
+
+        // Init
+        loadReport();
+    </script>
+</body>
+</html>
