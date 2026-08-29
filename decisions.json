@@ -1,30 +1,16 @@
 [
   {
-    "id": "D-17",
-    "file": "demo_app/core/interest.py",
-    "text": "EMI must use monthly normalization (annual_rate / 12) per lending convention",
-    "source": "PR #1",
-    "severity": "high"
+    "id": "D-50",
+    "file": "demo_app/core/discount_rules.py",
+    "text": "Discount codes must never be stacked to prevent excessive margin loss",
+    "source": "PR #14",
+    "severity": "critical"
   },
   {
-    "id": "D-22",
+    "id": "D-51",
     "file": "demo_app/main.py",
-    "text": "All /api/* responses use the {success, data, meta} envelope",
+    "text": "All /api/* responses use standard JSON serialization",
     "source": "PR #2",
-    "severity": "medium"
-  },
-  {
-    "id": "D-31",
-    "file": "demo_app/services/payment_service.py",
-    "text": "Payment endpoints must remain read-only and never mutate stored state",
-    "source": "PR #3",
-    "severity": "high"
-  },
-  {
-    "id": "D-40",
-    "file": "demo_app/main.py",
-    "text": "The customer endpoint must not depend on interest calculations",
-    "source": "PR #4",
     "severity": "medium"
   }
 ]
