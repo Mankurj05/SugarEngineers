@@ -1,7 +1,7 @@
 {
   "id": "cart_stacked_discount",
   "method": "POST",
-  "path": "/api/carts/quote",
+  "path": "/api/cart/quote",
   "body": {
     "customer_id": "CUSTOMER-001",
     "items": [
