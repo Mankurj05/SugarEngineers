@@ -30,7 +30,13 @@ def compute_impact(old_ref: str, new_ref: str, use_local: bool = False, verbose:
     
     # Try calling MCP for dependencies
     try:
-        mcp_res = run_mcp_command(project_id, "get_dependencies", {"file_path": changed_files[0]})
+        # Note: LatentGraph indexed these files when they were in Reference/backend.
+        # We rewrite the query path so the indexer finds what it expects.
+        target_file = changed_files[0]
+        if target_file.startswith("demo_app/"):
+            target_file = target_file.replace("demo_app/", "Reference/backend/")
+            
+        mcp_res = run_mcp_command(project_id, "get_dependencies", {"file_path": target_file})
         if mcp_res["status"] == "error":
             print(f"[impact.py] MCP ERROR: {mcp_res['message']}", file=sys.stderr)
             mcp_failed = True
