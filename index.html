@@ -557,10 +557,10 @@
                     const data = await res.json();
                     receipt.innerText = `[RECEIPT] ${data.receipt}`;
                 } else {
-                    receipt.innerText = `[RECEIPT] Appended invariant proposal for scenario ${scenarioId} to proposed_invariants.md (graph unavailable: MCP tool not initialized)`;
+                    receipt.innerText = `[ERROR] Failed to record invariant for scenario ${scenarioId} (Server status ${res.status})`;
                 }
             } catch (e) {
-                receipt.innerText = `[RECEIPT] Appended invariant proposal for scenario ${scenarioId} to proposed_invariants.md (graph unavailable: MCP tool not initialized)`;
+                receipt.innerText = `[ERROR] Failed to record invariant for scenario ${scenarioId}: ${e.message}`;
             }
         }
 

@@ -52,23 +52,31 @@ def parse_git_diff(code_diff: str) -> List[dict]:
         # Hunk header: @@ -old_line,len +new_line,len @@
         hunk_match = re.match(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
         if hunk_match:
-            current_line = int(hunk_match.group(1))
+            hunk_start = int(hunk_match.group(1))
             i += 1
             old_lines = []
             new_lines = []
+            curr_offset = 0
+            changed_line = None
 
             while i < len(lines) and not lines[i].startswith("diff --git") and not lines[i].startswith("@@"):
                 dl = lines[i]
                 if dl.startswith("-") and not dl.startswith("---"):
                     old_lines.append(dl[1:].strip())
+                    if changed_line is None:
+                        changed_line = hunk_start + curr_offset
                 elif dl.startswith("+") and not dl.startswith("+++"):
                     new_lines.append(dl[1:].strip())
+                    if changed_line is None:
+                        changed_line = hunk_start + curr_offset
+                elif dl.startswith(" "):
+                    curr_offset += 1
                 i += 1
 
             if current_file and (old_lines or new_lines):
                 changes.append({
                     "file": current_file,
-                    "line": current_line,
+                    "line": changed_line if changed_line is not None else hunk_start,
                     "old_code": " ".join(old_lines),
                     "new_code": " ".join(new_lines)
                 })
