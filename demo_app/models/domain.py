@@ -145,11 +145,10 @@ class InventoryService:
         for i in items: inventory_repo.reserve(i.product_id,i.quantity)
 class DiscountService:
     def apply(self, items, subtotal, customer, codes):
-        if len(codes)>1:
-            for code in codes:
-                coupon=store.coupons.get(code.upper())
-                if not coupon: raise ValidationError('INVALID_COUPON',f'Coupon {code} is not valid')
-                if coupon.exclusive or any(other.upper() in coupon.conflicts for other in codes if other.upper()!=code.upper()): raise CouponConflict(f'{code} cannot be combined with another selected coupon')
+        from demo_app.core.discount_rules import coupons_may_stack
+        if not coupons_may_stack(codes):
+            raise CouponConflict('Coupons cannot be stacked')
+            
         discount=0
         for code in codes:
             coupon=store.coupons.get(code.upper())
