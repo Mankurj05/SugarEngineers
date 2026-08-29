@@ -1,0 +1,21 @@
+{
+  "id": "customer_9",
+  "tag": "customer",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/customer/1000",
+    "body": null
+  },
+  "expected_status": 404,
+  "response": {
+    "success": false,
+    "error": {
+      "code": 404,
+      "message": "Customer not found: 1000"
+    },
+    "meta": {
+      "request_id": "5e4965a0-32bc-479b-8c3c-f52e82736b8f",
+      "generated_at": "2026-08-29T05:20:40.574541+00:00"
+    }
+  }
+}

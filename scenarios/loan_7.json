@@ -1,0 +1,25 @@
+{
+  "id": "loan_7",
+  "tag": "loan",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/loan/L-107",
+    "body": null
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "id": "L-107",
+      "principal": 300000,
+      "rate": 5.0,
+      "tenure_months": 240,
+      "start_date": "2019-07-01",
+      "customer_id": 7
+    },
+    "meta": {
+      "request_id": "acf8afc9-6a99-41bd-af58-7d4a302eb879",
+      "generated_at": "2026-08-29T05:20:40.517803+00:00"
+    }
+  }
+}

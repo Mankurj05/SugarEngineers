@@ -1,0 +1,25 @@
+{
+  "id": "loan_2",
+  "tag": "loan",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/loan/L-102",
+    "body": null
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "id": "L-102",
+      "principal": 120000,
+      "rate": 6.2,
+      "tenure_months": 120,
+      "start_date": "2022-05-15",
+      "customer_id": 2
+    },
+    "meta": {
+      "request_id": "74264c46-045a-4c6d-ade3-b6011fc043ad",
+      "generated_at": "2026-08-29T05:20:40.510520+00:00"
+    }
+  }
+}

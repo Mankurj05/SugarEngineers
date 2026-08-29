@@ -1,0 +1,25 @@
+{
+  "id": "loan_8",
+  "tag": "loan",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/loan/L-108",
+    "body": null
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "id": "L-108",
+      "principal": 20000,
+      "rate": 9.2,
+      "tenure_months": 36,
+      "start_date": "2024-01-15",
+      "customer_id": 8
+    },
+    "meta": {
+      "request_id": "c9c8dd3e-c9ca-46c8-a12a-25d167405c4e",
+      "generated_at": "2026-08-29T05:20:40.519365+00:00"
+    }
+  }
+}

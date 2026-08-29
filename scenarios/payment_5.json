@@ -1,0 +1,29 @@
+{
+  "id": "payment_5",
+  "tag": "payment",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/payment",
+    "body": {
+      "loan_id": "L-103",
+      "payments_made": 24
+    }
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "loan_id": "L-103",
+      "principal": 15000,
+      "payments_made": 24,
+      "total_installments": 24,
+      "emi": 678.41,
+      "total_paid": 16281.84,
+      "remaining_balance": 0
+    },
+    "meta": {
+      "request_id": "d7df79e6-f29e-4ab5-a1b2-dae18585f6bd",
+      "generated_at": "2026-08-29T05:20:40.542818+00:00"
+    }
+  }
+}

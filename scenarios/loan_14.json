@@ -1,0 +1,21 @@
+{
+  "id": "loan_14",
+  "tag": "loan",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/loan/INVALID",
+    "body": null
+  },
+  "expected_status": 404,
+  "response": {
+    "success": false,
+    "error": {
+      "code": 404,
+      "message": "Loan not found: INVALID"
+    },
+    "meta": {
+      "request_id": "f59792fc-84d2-4e1c-9e6e-d7a0d051a89e",
+      "generated_at": "2026-08-29T05:20:40.528627+00:00"
+    }
+  }
+}

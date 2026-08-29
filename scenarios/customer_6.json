@@ -1,0 +1,31 @@
+{
+  "id": "customer_6",
+  "tag": "customer",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/customer/19",
+    "body": null
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "id": 19,
+      "name": "Steve Rogers",
+      "email": "steve@example.com",
+      "loans": [
+        {
+          "id": "L-119",
+          "principal": 180000,
+          "rate": 5.2,
+          "tenure_months": 180,
+          "start_date": "2021-10-01"
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "1773a54f-c86b-4624-b8a9-b02d09fdfc0c",
+      "generated_at": "2026-08-29T05:20:40.570252+00:00"
+    }
+  }
+}

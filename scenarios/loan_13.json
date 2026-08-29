@@ -1,0 +1,21 @@
+{
+  "id": "loan_13",
+  "tag": "loan",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/loan/L-999",
+    "body": null
+  },
+  "expected_status": 404,
+  "response": {
+    "success": false,
+    "error": {
+      "code": 404,
+      "message": "Loan not found: L-999"
+    },
+    "meta": {
+      "request_id": "330e9c51-635f-45e9-91dc-f18a927e8a76",
+      "generated_at": "2026-08-29T05:20:40.527300+00:00"
+    }
+  }
+}
