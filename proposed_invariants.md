@@ -1,1 +1,2 @@
 - [2026-08-29T15:14:33.391080] Changing logic in demo_app/core/interest.py affects endpoints /api/emi, /api/payment. Verified across 35 replayed scenarios (25 drifted) on 2026-08-29 for scenario emi_1.
+- [2026-08-29T22:42:19.734965] Changing logic in demo_app/core/interest.py affects endpoints /api/emi, /api/payment. Verified across 35 replayed scenarios (25 drifted) on 2026-08-29 for scenario emi_1.
