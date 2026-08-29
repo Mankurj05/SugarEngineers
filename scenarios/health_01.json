@@ -1,0 +1,7 @@
+{
+  "id": "health_01",
+  "method": "GET",
+  "path": "/health",
+  "body": {},
+  "tags": ["other"]
+}

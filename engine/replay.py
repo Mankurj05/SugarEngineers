@@ -111,16 +111,8 @@ def main():
     print(f"Found {len(scenarios)} matching scenarios.")
     
     if not scenarios:
-        # Create a dummy scenario for testing if no directory exists
-        if not Path("scenarios").exists():
-            print("Creating dummy scenario for testing...")
-            scenarios = [{
-                "id": "test_01",
-                "method": "POST",
-                "path": "/api/emi",
-                "body": {"principal": 1000, "annual_rate": 5, "months": 12},
-                "tags": tags_list if tags_list else ["test"]
-            }]
+        print(f"ERROR: No matching scenarios found in 'scenarios' directory for tags: {args.tags}")
+        sys.exit(1)
     
     old_port = 8001
     new_port = 8002
