@@ -1,31 +1,9 @@
 {
   "id": "customer_4",
-  "tag": "customer",
-  "request": {
-    "method": "GET",
-    "endpoint": "/api/customer/10",
-    "body": null
-  },
-  "expected_status": 200,
-  "response": {
-    "success": true,
-    "data": {
-      "id": 10,
-      "name": "Julia Roberts",
-      "email": "julia@example.com",
-      "loans": [
-        {
-          "id": "L-110",
-          "principal": 150000,
-          "rate": 6.8,
-          "tenure_months": 120,
-          "start_date": "2022-09-30"
-        }
-      ]
-    },
-    "meta": {
-      "request_id": "7da4c454-09f8-4d93-a2ba-05dd8de0fefd",
-      "generated_at": "2026-08-29T05:20:40.567459+00:00"
-    }
-  }
+  "method": "GET",
+  "path": "/api/customer/10",
+  "body": {},
+  "tags": [
+    "customer"
+  ]
 }

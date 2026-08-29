@@ -1,24 +1,12 @@
 {
   "id": "payment_14",
-  "tag": "payment",
-  "request": {
-    "method": "POST",
-    "endpoint": "/api/payment",
-    "body": {
-      "loan_id": "L-101",
-      "payments_made": -5
-    }
+  "method": "POST",
+  "path": "/api/payment",
+  "body": {
+    "loan_id": "L-101",
+    "payments_made": -5
   },
-  "expected_status": 400,
-  "response": {
-    "success": false,
-    "error": {
-      "code": 400,
-      "message": "Payments made cannot be negative"
-    },
-    "meta": {
-      "request_id": "49a827b0-3675-497a-bd1a-b21fdd2ceb18",
-      "generated_at": "2026-08-29T05:20:40.559920+00:00"
-    }
-  }
+  "tags": [
+    "payment"
+  ]
 }

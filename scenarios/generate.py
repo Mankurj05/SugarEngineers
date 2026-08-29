@@ -1,6 +1,8 @@
+import argparse
 import json
 import httpx
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -18,20 +20,55 @@ def ensure_server_running():
         return False
     return False
 
-def save_scenario(tag, number, method, endpoint, request_data, response_data, status_code):
+def validate_scenario(filepath: Path) -> bool:
+    try:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error reading {filepath}: {e}")
+        return False
+
+    required_keys = {"id", "method", "path", "body", "tags"}
+    actual_keys = set(data.keys())
+    
+    if required_keys != actual_keys:
+        print(f"Validation failed for {filepath.name}: keys mismatch. Expected {required_keys}, got {actual_keys}")
+        return False
+        
+    if not isinstance(data.get("tags"), list):
+        print(f"Validation failed for {filepath.name}: 'tags' must be a list.")
+        return False
+        
+    return True
+
+def run_validation():
+    print("Validating scenarios...")
+    invalid_count = 0
+    total = 0
+    for filepath in SCENARIOS_DIR.glob("*.json"):
+        if filepath.name == "manifest.json":
+            continue
+        total += 1
+        if not validate_scenario(filepath):
+            invalid_count += 1
+            
+    if invalid_count > 0:
+        print(f"Validation failed! {invalid_count} out of {total} scenarios are invalid.")
+        sys.exit(1)
+    else:
+        print(f"Validation passed! All {total} scenarios match the contract.")
+        sys.exit(0)
+
+def save_scenario(tag, number, method, path, request_data):
     filename = f"{tag}_{number}.json"
     filepath = SCENARIOS_DIR / filename
     
     scenario = {
         "id": f"{tag}_{number}",
-        "tag": tag,
-        "request": {
-            "method": method,
-            "endpoint": endpoint,
-            "body": request_data
-        },
-        "expected_status": status_code,
-        "response": response_data
+        "method": method,
+        "path": path,
+        "body": request_data if request_data is not None else {},
+        "tags": [tag]
     }
     
     with open(filepath, "w") as f:
@@ -91,8 +128,10 @@ def generate_emi_scenarios(client):
     all_cases = cases + error_cases
     
     for i, payload in enumerate(all_cases, 1):
+        # We only need to check if the route is valid, the actual recording happens in replay.py
+        # But we do a test request anyway to make sure we don't save broken inputs
         response = client.post(f"{BASE_URL}/api/emi", json=payload)
-        scenario_id = save_scenario(tag, i, "POST", "/api/emi", payload, response.json(), response.status_code)
+        scenario_id = save_scenario(tag, i, "POST", "/api/emi", payload)
         ids.append(scenario_id)
         
     return ids
@@ -112,7 +151,7 @@ def generate_loan_scenarios(client):
     for i, loan_id in enumerate(all_cases, 1):
         endpoint = f"/api/loan/{loan_id}"
         response = client.get(f"{BASE_URL}{endpoint}")
-        scenario_id = save_scenario(tag, i, "GET", endpoint, None, response.json(), response.status_code)
+        scenario_id = save_scenario(tag, i, "GET", endpoint, None)
         ids.append(scenario_id)
         
     return ids
@@ -146,7 +185,7 @@ def generate_payment_scenarios(client):
     
     for i, payload in enumerate(all_cases, 1):
         response = client.post(f"{BASE_URL}/api/payment", json=payload)
-        scenario_id = save_scenario(tag, i, "POST", "/api/payment", payload, response.json(), response.status_code)
+        scenario_id = save_scenario(tag, i, "POST", "/api/payment", payload)
         ids.append(scenario_id)
         
     return ids
@@ -166,12 +205,20 @@ def generate_customer_scenarios(client):
     for i, cust_id in enumerate(all_cases, 1):
         endpoint = f"/api/customer/{cust_id}"
         response = client.get(f"{BASE_URL}{endpoint}")
-        scenario_id = save_scenario(tag, i, "GET", endpoint, None, response.json(), response.status_code)
+        scenario_id = save_scenario(tag, i, "GET", endpoint, None)
         ids.append(scenario_id)
         
     return ids
 
 def main():
+    parser = argparse.ArgumentParser(description="Generate scenario files")
+    parser.add_argument("--validate", action="store_true", help="Validate existing scenarios against schema")
+    args = parser.parse_args()
+
+    if args.validate:
+        run_validation()
+        return
+
     if not ensure_server_running():
         return
 

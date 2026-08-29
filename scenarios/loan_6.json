@@ -1,25 +1,9 @@
 {
   "id": "loan_6",
-  "tag": "loan",
-  "request": {
-    "method": "GET",
-    "endpoint": "/api/loan/L-106",
-    "body": null
-  },
-  "expected_status": 200,
-  "response": {
-    "success": true,
-    "data": {
-      "id": "L-106",
-      "principal": 85000,
-      "rate": 7.0,
-      "tenure_months": 84,
-      "start_date": "2021-03-12",
-      "customer_id": 6
-    },
-    "meta": {
-      "request_id": "52fd4a98-c140-4dfa-ad81-391b6e55f281",
-      "generated_at": "2026-08-29T05:20:40.516263+00:00"
-    }
-  }
+  "method": "GET",
+  "path": "/api/loan/L-106",
+  "body": {},
+  "tags": [
+    "loan"
+  ]
 }

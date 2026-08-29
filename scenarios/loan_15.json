@@ -1,21 +1,9 @@
 {
   "id": "loan_15",
-  "tag": "loan",
-  "request": {
-    "method": "GET",
-    "endpoint": "/api/loan/L-0",
-    "body": null
-  },
-  "expected_status": 404,
-  "response": {
-    "success": false,
-    "error": {
-      "code": 404,
-      "message": "Loan not found: L-0"
-    },
-    "meta": {
-      "request_id": "76564c23-f340-44a9-9320-a2b0e079b1a2",
-      "generated_at": "2026-08-29T05:20:40.530230+00:00"
-    }
-  }
+  "method": "GET",
+  "path": "/api/loan/L-0",
+  "body": {},
+  "tags": [
+    "loan"
+  ]
 }
