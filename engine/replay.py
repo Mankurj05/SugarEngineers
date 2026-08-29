@@ -37,7 +37,7 @@ def start_server(app_path: str, port: int, cwd: str) -> subprocess.Popen:
 def wait_for_health(port: int, timeout: int = 10) -> bool:
     print(f"Waiting for health check on port {port}...")
     start_time = time.time()
-    url = f"http://127.0.0.1:{port}/health"
+    url = f"http://127.0.0.1:{port}/api/health"
     
     with httpx.Client() as client:
         while time.time() - start_time < timeout:
