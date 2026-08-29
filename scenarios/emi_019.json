@@ -1,0 +1,13 @@
+{
+  "id": "emi_019",
+  "method": "POST",
+  "path": "/api/emi",
+  "tags": [
+    "emi"
+  ],
+  "body": {
+    "principal": 500000,
+    "annual_rate": 0.5,
+    "months": 12
+  }
+}

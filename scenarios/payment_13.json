@@ -1,0 +1,24 @@
+{
+  "id": "payment_13",
+  "tag": "payment",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/payment",
+    "body": {
+      "loan_id": "L-999",
+      "payments_made": 10
+    }
+  },
+  "expected_status": 404,
+  "response": {
+    "success": false,
+    "error": {
+      "code": 404,
+      "message": "Loan not found: L-999"
+    },
+    "meta": {
+      "request_id": "d9796e22-5dc7-4e22-8732-c26e3e8525b7",
+      "generated_at": "2026-08-29T05:20:40.558295+00:00"
+    }
+  }
+}

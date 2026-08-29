@@ -1,0 +1,27 @@
+{
+  "id": "emi_11",
+  "tag": "emi",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/emi",
+    "body": {
+      "principal": 100,
+      "annual_rate": 20.0,
+      "tenure_months": 6
+    }
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "principal": 100.0,
+      "annual_rate": 20.0,
+      "tenure_months": 6,
+      "emi": 17.65
+    },
+    "meta": {
+      "request_id": "2e3084e4-61be-434d-93c7-dcbc0d451f61",
+      "generated_at": "2026-08-29T05:20:40.489549+00:00"
+    }
+  }
+}

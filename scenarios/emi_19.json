@@ -1,0 +1,25 @@
+{
+  "id": "emi_19",
+  "tag": "emi",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/emi",
+    "body": {
+      "principal": 0,
+      "annual_rate": 5.0,
+      "tenure_months": 12
+    }
+  },
+  "expected_status": 400,
+  "response": {
+    "success": false,
+    "error": {
+      "code": 400,
+      "message": "Invalid loan parameters. Principal and tenure must be > 0. Rate must be >= 0."
+    },
+    "meta": {
+      "request_id": "3268fd29-8535-4b68-8481-293420aa82e5",
+      "generated_at": "2026-08-29T05:20:40.504432+00:00"
+    }
+  }
+}

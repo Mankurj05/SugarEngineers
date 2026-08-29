@@ -1,0 +1,25 @@
+{
+  "id": "loan_4",
+  "tag": "loan",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/loan/L-104",
+    "body": null
+  },
+  "expected_status": 200,
+  "response": {
+    "success": true,
+    "data": {
+      "id": "L-104",
+      "principal": 250000,
+      "rate": 4.5,
+      "tenure_months": 180,
+      "start_date": "2020-11-20",
+      "customer_id": 3
+    },
+    "meta": {
+      "request_id": "6adc58f8-662d-4db0-8ba0-d1002c7e6859",
+      "generated_at": "2026-08-29T05:20:40.513287+00:00"
+    }
+  }
+}
