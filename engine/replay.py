@@ -58,13 +58,16 @@ def get_scenarios(tags: list[str]) -> list[dict]:
         return []
         
     matched = []
+    # If tags is ["all"], we run everything
+    run_all = tags == ["all"]
+    
     for filepath in scenarios_dir.glob("*.json"):
         try:
             with open(filepath, "r") as f:
                 scenario = json.load(f)
                 
             scenario_tags = set(scenario.get("tags", []))
-            if not tags or any(tag in scenario_tags for tag in tags):
+            if run_all or not tags or any(tag in scenario_tags for tag in tags):
                 matched.append(scenario)
         except Exception as e:
             print(f"Error reading {filepath}: {e}")
