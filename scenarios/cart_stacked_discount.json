@@ -1,0 +1,22 @@
+{
+  "id": "cart_stacked_discount",
+  "method": "POST",
+  "path": "/api/carts/quote",
+  "body": {
+    "customer_id": "CUSTOMER-001",
+    "items": [
+      {
+        "product_id": "PROD-001",
+        "quantity": 2
+      }
+    ],
+    "coupon_codes": [
+      "WELCOME10",
+      "HOLIDAY20"
+    ]
+  },
+  "tags": [
+    "cart",
+    "pricing"
+  ]
+}
