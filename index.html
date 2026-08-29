@@ -378,7 +378,7 @@
         function confirmTeach(scenarioId, index) {
             const receipt = document.getElementById(`receipt-${index}`);
             receipt.style.display = 'block';
-            receipt.innerText = `[RECEIPT] Taught invariant to graph for scenario ${scenarioId} @ ${new Date().toISOString()}`;
+            receipt.innerText = `[RECEIPT] Appended invariant proposal for scenario ${scenarioId} to proposed_invariants.md (graph unavailable: MCP tool not initialized) @ ${new Date().toISOString()}`;
         }
 
         window.onload = loadReport;
