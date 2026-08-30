@@ -22,8 +22,9 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     # Map endpoints to tags
     tags = []
     for ep in affected_endpoints:
-        clean_ep = ep.strip("/").split("/")[1] if len(ep.strip("/").split("/")) > 1 else ep.strip("/")
-        tags.append(clean_ep)
+        if 'cart' in ep: tags.append('cart')
+        if 'product' in ep: tags.append('product')
+        if 'order' in ep or 'checkout' in ep: tags.append('order')
 
     # If no endpoints detected (like when we don't have tags), default to "all" to run everything
     tags_str = ",".join(set(tags)) if tags else "all"
