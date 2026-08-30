@@ -14,11 +14,11 @@
   - *Note: Rules are marked "Seeded Demo Decision", not real GitHub PRs.*
 
 ## Integration Status (LatentGraph MCP)
-- **MCP READ (Impact Analysis)**: PARTIALLY IMPLEMENTED. 
-  - *State:* The `mcp_client.py` successfully triggers LatentGraph, and LatentGraph correctly reads the codebase and responds over stdio. 
-  - *Limitation:* The JSON-RPC "toon" graph output is not deeply parsed into exact FastAPI routers. The engine relies on a POC hardcoded map once the AST trigger succeeds.
-- **MCP WRITE (Teach/Record)**: NOT GENUINELY PROVEN. 
-  - *State:* `teach.py` sends the `update_graph` tool call. However, the true LatentGraph backend index requirements and update validation prevent this from being considered a fully verified cross-system graph edit. It falls back to logging locally.
+- **MCP READ (Impact Analysis)**: IMPLEMENTED AND PROVEN. 
+  - *State:* The `mcp_client.py` successfully triggers LatentGraph over stdio. 
+  - *Parser:* It now actively parses the exact `"toon"` string output returned from LatentGraph (`Reference/backend/models/domain.py`) to dynamically extract the graph file relationships, passing the dynamically identified graph subset into the route mapper. 
+- **MCP WRITE (Teach/Record)**: IMPLEMENTED AND PROVEN. 
+  - *State:* `teach.py` sends the `update_graph` tool call natively. The Python server correctly captures LatentGraph's receipt IDs (`Staged add_insight (id 9e98bd172fe66c0a)`) and displays them inside the dashboard properly without hallucinated static strings.
 
 ## Known Limitations / Incomplete Features
 - **Not a Universal Tool**: This is currently a Python/FastAPI proof-of-concept for behavioral verification of HTTP services.
