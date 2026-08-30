@@ -156,7 +156,7 @@ class DiscountService:
             if subtotal<coupon.minimum_subtotal: raise ValidationError('COUPON_MINIMUM',f'{code} requires subtotal of {coupon.minimum_subtotal:.2f}')
             eligible=sum(next(p.price for p in PRODUCTS if p.id==i.product_id)*i.quantity for i in items if not coupon.categories or next(p for p in PRODUCTS if p.id==i.product_id).category in coupon.categories)
             discount += eligible*coupon.value/100 if coupon.kind=='percentage' else min(coupon.value,eligible)
-        if customer.tier=='gold': discount += subtotal*0.05
+        if customer.tier=='gold': discount += subtotal*0.03
         if customer.tier=='platinum': discount += subtotal*0.05
         return money(min(discount,subtotal))
 class ShippingService:

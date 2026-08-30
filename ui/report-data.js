@@ -1,0 +1,78 @@
+window.BLASTPROOF_REPORT = {
+  "summary": {
+    "total": 2,
+    "identical": 2,
+    "intentional": 0,
+    "regression": 0,
+    "unexplained": 0
+  },
+  "radius": {
+    "endpoints": [
+      "/api/orders",
+      "/api/carts/quote",
+      "/api/checkout",
+      "/api/products"
+    ],
+    "affected_files": [
+      "demo_app/models/domain.py",
+      "demo_app/__init__.py"
+    ],
+    "changed": [
+      "demo_app/__init__.py",
+      "demo_app/api/products.py",
+      "demo_app/conftest.py",
+      "demo_app/core/__init__.py",
+      "demo_app/core/data_store.py",
+      "demo_app/core/discount_rules.py",
+      "demo_app/core/interest.py",
+      "demo_app/core/schemas.py",
+      "demo_app/main.py",
+      "demo_app/models/domain.py",
+      "demo_app/repositories/product_repository.py",
+      "demo_app/services/__init__.py",
+      "demo_app/services/emi_service.py",
+      "demo_app/services/loan_service.py",
+      "demo_app/services/order_service.py",
+      "demo_app/services/payment_service.py",
+      "demo_app/services/pricing_service.py",
+      "demo_app/test_api.py",
+      "demo_app/test_main.py"
+    ],
+    "files": [
+      "demo_app/__init__.py",
+      "demo_app/api/products.py",
+      "demo_app/conftest.py",
+      "demo_app/core/__init__.py",
+      "demo_app/core/data_store.py",
+      "demo_app/core/discount_rules.py",
+      "demo_app/core/interest.py",
+      "demo_app/core/schemas.py",
+      "demo_app/main.py",
+      "demo_app/models/domain.py",
+      "demo_app/repositories/product_repository.py",
+      "demo_app/services/__init__.py",
+      "demo_app/services/emi_service.py",
+      "demo_app/services/loan_service.py",
+      "demo_app/services/order_service.py",
+      "demo_app/services/payment_service.py",
+      "demo_app/services/pricing_service.py",
+      "demo_app/test_api.py",
+      "demo_app/test_main.py"
+    ],
+    "source": "mcp_dynamic_graph_parser"
+  },
+  "results": [
+    {
+      "scenario": "product_list",
+      "verdict": "identical",
+      "diffs": [],
+      "explanation": "No behavioral changes detected in product listing endpoint."
+    },
+    {
+      "scenario": "cart_quote",
+      "verdict": "identical",
+      "diffs": [],
+      "explanation": "No behavioral changes detected in cart quote calculation."
+    }
+  ]
+};

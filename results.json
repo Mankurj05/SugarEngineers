@@ -1,0 +1,46 @@
+[
+  {
+    "scenario": "cart_discount",
+    "old": {
+      "status": 200,
+      "json": {
+        "subtotal": 259.98,
+        "discount": 33.8,
+        "shipping": 0.0,
+        "tax": 40.71,
+        "total": 266.89,
+        "currency": "USD",
+        "item_count": 2
+      }
+    },
+    "new": {
+      "status": 200,
+      "json": {
+        "subtotal": 259.98,
+        "discount": 39.0,
+        "shipping": 0.0,
+        "tax": 39.78,
+        "total": 260.76,
+        "currency": "USD",
+        "item_count": 2
+      }
+    }
+  },
+  {
+    "scenario": "cart_stacked_discount",
+    "old": {
+      "status": 400,
+      "json": {
+        "error": "COUPON_CONFLICT",
+        "message": "Coupons cannot be stacked"
+      }
+    },
+    "new": {
+      "status": 400,
+      "json": {
+        "error": "COUPON_CONFLICT",
+        "message": "Coupons cannot be stacked"
+      }
+    }
+  }
+]

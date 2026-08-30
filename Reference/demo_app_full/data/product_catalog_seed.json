@@ -1,0 +1,30 @@
+[
+  {
+    "id": "SEED-P-1",
+    "title": "Enterprise E-Commerce Product SKU #1",
+    "category": "apparel",
+    "price": 20.24,
+    "inventory": 510,
+    "description": "Detailed product description for enterprise item #1 featuring high reliability and performance.",
+    "attributes": {
+      "weight_kg": 0.6,
+      "dimensions": "11x16x6 cm",
+      "warranty_years": 2,
+      "country_of_origin": "DE"
+    }
+  },
+  {
+    "id": "SEED-P-2",
+    "title": "Enterprise E-Commerce Product SKU #2",
+    "category": "home",
+    "price": 24.49,
+    "inventory": 520,
+    "description": "Detailed product description for enterprise item #2 featuring high reliability and performance.",
+    "attributes": {
+      "weight_kg": 0.7,
+      "dimensions": "12x17x7 cm",
+      "warranty_years": 3,
+      "country_of_origin": "JP"
+    }
+  }
+]

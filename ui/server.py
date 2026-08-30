@@ -11,6 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REPORT_FILE = PROJECT_ROOT / "report.json"
 RESULTS_FILE = PROJECT_ROOT / "results.json"
 INDEX_HTML = PROJECT_ROOT / "index.html"
+REPORT_DATA_JS = PROJECT_ROOT / "ui" / "report-data.js"
 
 app = FastAPI(title="BlastProof UI Server")
 
@@ -22,6 +23,21 @@ async def serve_dashboard():
     if INDEX_HTML.exists():
         return HTMLResponse(content=INDEX_HTML.read_text(encoding="utf-8"))
     return HTMLResponse(content="<h1>BlastProof UI index.html not found</h1>", status_code=404)
+
+@app.get("/report.json")
+async def get_report_json_file():
+    if not REPORT_FILE.exists():
+        # Fallback to generating or serving results as report if report.json is missing
+        if RESULTS_FILE.exists():
+            with open(RESULTS_FILE, "r", encoding="utf-8") as f:
+                res = json.load(f)
+                return {
+                    "summary": {"total": len(res), "identical": 0, "intentional": 0, "regression": len(res), "unexplained": 0},
+                    "radius": {"source": "mcp"},
+                    "results": res
+                }
+        raise HTTPException(status_code=404, detail="report.json not found.")
+    return FileResponse(REPORT_FILE, media_type="application/json")
 
 @app.get("/api/report")
 async def get_report():
@@ -36,6 +52,12 @@ async def get_results():
         raise HTTPException(status_code=404, detail="results.json not found.")
     with open(RESULTS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
+
+@app.get("/ui/report-data.js")
+async def get_report_data_js():
+    if not REPORT_DATA_JS.exists():
+        raise HTTPException(status_code=404, detail="report-data.js not found. Run pipeline first.")
+    return FileResponse(REPORT_DATA_JS, media_type="application/javascript")
 
 @app.post("/api/run")
 async def run_pipeline():

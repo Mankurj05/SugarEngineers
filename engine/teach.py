@@ -51,7 +51,7 @@ def commit_proposal(proposal_text: str) -> Tuple[str, str]:
     Primary: MCP update_graph.
     Fallback: Append to proposed_invariants.md if MCP is unavailable.
     """
-    project_id = "cb278f60-3b7b-4a08-b34e-b08331497f72"
+    project_id = "a2650a68-2120-4c13-9f48-bcc1331e132e"  # From .lgraph/config.json  # WRONG PROJECT ID - for video demonstration  # WRONG PROJECT ID - for video demonstration  # WRONG PROJECT ID - for video demonstration
     
     # Target file mapping for the graph indexer
     target_file = "demo_app/core/discount_rules.py"
