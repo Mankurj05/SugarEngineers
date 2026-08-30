@@ -41,7 +41,7 @@ async def get_results():
 async def run_pipeline():
     cmd = [
         sys.executable, "-m", "engine.cli",
-        "--old", "v1.0",
+        "--old", "main",
         "--new", "demo-change",
         "--app", "demo_app.main:app"
     ]
@@ -64,7 +64,20 @@ async def teach_invariant(req: TeachRequest):
     try:
         res = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=True, text=True, check=True)
         receipt_text = res.stdout.strip()
-        return {"success": True, "scenario": req.scenario, "receipt": receipt_text}
+        status = "fallback"
+        msg = receipt_text
+        
+        # Parse the python output to surface exact MCP status to the UI
+        if "(mcp_graph_write)" in receipt_text:
+            status = "success"
+            parts = receipt_text.split("): ", 1)
+            if len(parts) > 1: msg = parts[1]
+        elif "(fallback_local_file)" in receipt_text:
+            status = "fallback"
+            parts = receipt_text.split("): ", 1)
+            if len(parts) > 1: msg = parts[1]
+            
+        return {"status": status, "message": msg, "scenario": req.scenario}
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Teach execution failed: {e.stderr or e.stdout}")
 
