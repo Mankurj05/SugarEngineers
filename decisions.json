@@ -3,14 +3,14 @@
     "id": "D-50",
     "file": "demo_app/core/discount_rules.py",
     "text": "Discount codes must never be stacked to prevent excessive margin loss",
-    "source": "PR #14",
+    "source": "Seeded Demo Decision",
     "severity": "critical"
   },
   {
     "id": "D-51",
     "file": "demo_app/main.py",
     "text": "All /api/* responses use standard JSON serialization",
-    "source": "PR #2",
+    "source": "Seeded Demo Decision",
     "severity": "medium"
   }
 ]

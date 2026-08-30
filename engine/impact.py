@@ -42,14 +42,16 @@ def compute_impact(old_ref: str, new_ref: str, use_local: bool = False, verbose:
             mcp_failed = True
         else:
             print(f"[impact.py] MCP READ SUCCESS: {mcp_res['data']}", file=sys.stderr)
-            # A true production bridge would parse the returned tree to map to routers
-            # We map a generic set based on MCP confirming the file is tied to models
+            # In this hackathon POC, parsing the AST "toon" graph accurately into route endpoints
+            # is out of scope. We explicitly label this as a partially simulated mapping derived 
+            # from the real MCP graph read trigger.
+            print(f"[impact.py] Using POC route mapping from MCP AST read...", file=sys.stderr)
             return {
                 "endpoints": ["/api/carts/quote", "/api/checkout", "/api/products"],
                 "affected_files": [changed_files[0]],
                 "changed": changed_files,
                 "files": changed_files,
-                "source": "mcp"
+                "source": "mcp_with_poc_mapping"
             }
     except Exception as e:
         print(f"[impact.py] MCP Bridge Exception: {e}", file=sys.stderr)
