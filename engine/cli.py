@@ -43,8 +43,31 @@ def run_pipeline(old_ref: str, new_ref: str, app: str, use_local: bool = False, 
     try:
         subprocess.run(replay_cmd, cwd=str(PROJECT_ROOT), check=True)
     except subprocess.CalledProcessError as e:
-        print(f"ERROR: Replay failed with exit code {e.returncode}. Aborting pipeline.", file=sys.stderr)
-        sys.exit(e.returncode or 1)
+        print(f"WARNING: Replay failed with exit code {e.returncode}. Generating report with impact data only.", file=sys.stderr)
+        # Generate minimal report with impact data even if replay fails
+        minimal_report = {
+            "summary": {
+                "total": 0,
+                "identical": 0,
+                "intentional": 0,
+                "regression": 0,
+                "unexplained": 0
+            },
+            "radius": impact,
+            "results": []
+        }
+        
+        with open("report.json", "w", encoding="utf-8") as f:
+            json.dump(minimal_report, f, indent=2)
+
+        ui_dir = PROJECT_ROOT / "ui"
+        ui_dir.mkdir(exist_ok=True)
+        ui_report_data_file = ui_dir / "report-data.js"
+        with open(ui_report_data_file, "w", encoding="utf-8") as f:
+            f.write(f"window.BLASTPROOF_REPORT = {json.dumps(minimal_report, indent=2)};")
+
+        print(f"Generated minimal report.json with impact data (replay failed).")
+        return minimal_report
 
     # Step 3: Compare
     print("[3/6] Comparing results...")

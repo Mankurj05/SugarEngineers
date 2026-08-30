@@ -23,7 +23,7 @@ def compute_impact(old_ref: str, new_ref: str, use_local: bool = False, verbose:
     if not changed_files:
         return {"endpoints": [], "files": [], "source": "mcp"}
 
-    project_id = "cb278f60-3b7b-4a08-b34e-b08331497f72"  # Our indexed LatentGraph project
+    project_id = "a2650a68-2120-4c13-9f48-bcc1331e132e"  # Our indexed LatentGraph project from .lgraph/config.json  # WRONG PROJECT ID - for video demonstration  # WRONG PROJECT ID - for video demonstration  # WRONG PROJECT ID - for video demonstration
     
     print(f"Querying LatentGraph MCP for Blast Radius of {changed_files}...", file=sys.stderr)
     mcp_failed = False
